@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lớp 4C - Siêu Ứng Dụng Online</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        /* GIỮ NGUYÊN CSS NHƯ CŨ */
+        :root {
+            --bg-overlay: rgba(255, 255, 255, 0.92);
+            --desk-student: #e0f7fa; --desk-border: #00bcd4; --desk-shadow: #00838f;
+            --desk-teacher: #fff3e0; --desk-teacher-border: #ff7043;
+            --text-color: #006064; --header-bg: rgba(255, 255, 255, 0.95);
+            --modal-bg: #ffffff;
+            --btn-primary: #00bcd4; --btn-danger: #ef5350; --btn-success: #66bb6a;
+            --btn-grade: #f39c12; --game-bg: #2c3e50;
+            --chat-primary: #0084ff; --chat-teacher: #ff6b00;
+        }
+        body { font-family: 'Nunito', sans-serif; margin: 0; height: 100vh; display: flex; flex-direction: column; color: var(--text-color); overflow: hidden; background-image: url('https://img.freepik.com/free-vector/hand-drawn-back-school-background_23-2149464866.jpg'); background-size: cover; background-position: center; background-repeat: no-repeat; }
+        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--bg-overlay); z-index: -1; }
+        header { background: var(--header-bg); padding: 10px 30px; border-bottom: 3px dashed var(--desk-border); display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.05); z-index: 100; }
+        h1.class-title { margin: 0; font-size: 1.8em; color: #00838f; text-transform: uppercase; }
+        .status-badge { background: white; border: 2px solid var(--desk-border); padding: 5px 15px; border-radius: 20px; font-weight: 800; display: flex; align-items: center; gap: 8px; font-size: 0.85em; cursor: pointer; }
+        .status-badge.active { background: #ffab91; color: white; border-color: #ff7043; animation: bounce 1s infinite alternate; }
+        @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-3px); } }
+        .classroom-area { flex: 1; position: relative; padding: 20px; display: flex; justify-content: center; gap: 80px; align-items: center; }
+        .desk-column { display: grid; grid-template-columns: 1fr 1fr; column-gap: 20px; row-gap: 20px; }
+        .student-desk { width: 160px; height: 130px; background-color: var(--desk-student); border: 3px solid var(--desk-border); border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 8px 5px; box-sizing: border-box; text-align: center; cursor: pointer; box-shadow: 0 6px 0 var(--desk-shadow); transition: transform 0.1s; position: relative; z-index: 10; }
+        .student-desk:hover { transform: translateY(-4px); } .student-desk:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--desk-shadow); }
+        .student-desk.empty { background-color: rgba(255, 255, 255, 0.6); border-color: #b2dfdb; box-shadow: 0 4px 0 #b2dfdb; color: #80cbc4; justify-content: center; }
+        .desk-name { font-weight: 800; font-size: 1em; color: #006064; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; margin-top: 10px; }
+        .desk-icon { font-size: 2.2em; margin: -2px 0; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.15)); }
+        .desk-rank-title { font-size: 0.7em; text-transform: uppercase; font-weight: 900; padding: 2px 5px; border-radius: 4px; color: #fff; background: #bbb; width: 90%; }
+        .desk-score { font-size: 0.85em; font-weight: bold; color: #e65100; background: rgba(255,255,255,0.8); padding: 0 5px; border-radius: 5px; }
+        .medal-badge { position: absolute; top: -15px; right: -10px; font-size: 2.8em; filter: drop-shadow(0 4px 3px rgba(0,0,0,0.3)); z-index: 20; animation: floatMedal 2s infinite ease-in-out; }
+        @keyframes floatMedal { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+        .teacher-desk { position: absolute; bottom: 20px; right: 30px; width: 280px; height: 140px; background-color: var(--desk-teacher); border: 4px solid var(--desk-teacher-border); border-radius: 20px; color: #d84315; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 10px 0 #bf360c; cursor: pointer; z-index: 50; transition: 0.3s; }
+        .teacher-desk:hover { transform: scale(1.02); }
+        .modal { display: none; position: fixed; z-index: 200; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
+        .modal-content { background-color: var(--modal-bg); padding: 25px; border-radius: 20px; width: 550px; max-height: 85vh; overflow-y: auto; box-shadow: 0 15px 30px rgba(0,0,0,0.25); border: 4px solid #80deea; position: relative; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px dashed #b2ebf2; padding-bottom: 10px; }
+        .close-btn { font-size: 1.5em; cursor: pointer; color: #aaa; } .close-btn:hover { color: #f44336; }
+        .chat-widget-btn { position: fixed; bottom: 20px; left: 30px; width: 60px; height: 60px; background-color: var(--chat-primary); border-radius: 50%; box-shadow: 0 4px 15px rgba(0,0,0,0.2); cursor: pointer; z-index: 100; display: flex; align-items: center; justify-content: center; font-size: 30px; color: white; transition: transform 0.2s; display: none; }
+        .chat-widget-btn:hover { transform: scale(1.1); }
+        .chat-window { position: fixed; bottom: 90px; left: 30px; width: 350px; height: 450px; background: white; border-radius: 15px; box-shadow: 0 5px 25px rgba(0,0,0,0.2); z-index: 101; display: none; flex-direction: column; overflow: hidden; border: 2px solid #eee; }
+        .chat-header { background: var(--chat-primary); color: white; padding: 10px 15px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
+        .chat-body { flex: 1; padding: 15px; overflow-y: auto; background: #f9f9f9; display: flex; flex-direction: column; gap: 10px; }
+        .chat-footer { padding: 10px; border-top: 1px solid #eee; display: flex; gap: 5px; }
+        .chat-footer input { flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 20px; outline: none; }
+        .msg-row { display: flex; flex-direction: column; max-width: 80%; } .msg-row.me { align-self: flex-end; align-items: flex-end; } .msg-row.other { align-self: flex-start; align-items: flex-start; }
+        .msg-sender { font-size: 0.75em; color: #888; margin-bottom: 2px; margin-left: 5px; } .msg-bubble { padding: 8px 12px; border-radius: 15px; font-size: 0.9em; word-wrap: break-word; }
+        .msg-row.me .msg-bubble { background: var(--chat-primary); color: white; border-bottom-right-radius: 2px; } .msg-row.other .msg-bubble { background: #e4e6eb; color: #050505; border-bottom-left-radius: 2px; }
+        .msg-row.teacher .msg-sender { color: var(--chat-teacher); font-weight: bold; } .msg-row.teacher .msg-bubble { background: #fff3e0; border: 1px solid var(--chat-teacher); color: #d35400; }
+        .blur-content { filter: blur(5px); pointer-events: none; user-select: none; } .locked-message { position: absolute; top: 60%; left: 50%; transform: translate(-50%, -50%); background: rgba(255,255,255,0.9); padding: 10px 20px; border-radius: 10px; font-weight: bold; color: #d32f2f; border: 2px solid #ef5350; z-index: 10; white-space: nowrap; }
+        .btn { border: none; padding: 10px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; color: white; transition: 0.2s; margin: 5px 0; } .btn-full { width: 100%; }
+        .btn-primary { background: var(--btn-primary); } .btn-success { background: var(--btn-success); } .btn-danger { background: var(--btn-danger); } .btn-grade { background: var(--btn-grade); }
+        .btn-game { background: #8e44ad; box-shadow: 0 4px 0 #6c3483; } .btn-game:active { transform: translateY(4px); box-shadow: none; } .btn:disabled { background: #ccc; cursor: not-allowed; box-shadow: none; }
+        .room-box { border: 2px dashed #ccc; padding: 20px; margin: 15px 0; border-radius: 10px; background: #f9f9f9; text-align: left; } .player-row { display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #eee; align-items: center; }
+        .status-ready { color: green; font-weight: bold; } .status-wait { color: #f39c12; font-style: italic; }
+        .question-box { background: #e3f2fd; padding: 20px; border-radius: 10px; font-size: 1.2em; font-weight: bold; margin-bottom: 20px; min-height: 80px; display:flex; align-items:center; justify-content:center; text-align: center; }
+        .answers-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; } .answer-btn { background: white; border: 2px solid #00bcd4; padding: 15px; border-radius: 10px; cursor: pointer; font-weight: bold; transition: 0.2s; text-align: center; }
+        .answer-btn:hover { background: #e0f7fa; } .answer-btn.correct { background: #66bb6a; color: white; border-color: #43a047; } .answer-btn.wrong { background: #ef5350; color: white; border-color: #c62828; }
+        .timer-display { font-size: 1.5em; font-weight: bold; color: #d35400; background: #fff3e0; padding: 5px 15px; border-radius: 20px; border: 2px solid #ffccbc; }
+        textarea { width: 100%; padding: 12px; border: 2px solid #80deea; border-radius: 8px; font-family: 'Nunito', sans-serif; box-sizing: border-box; min-height: 80px; resize: vertical; margin-bottom: 15px; }
+        .task-list { list-style: none; padding: 0; margin: 0; } .task-item { background: white; border: 1px solid #ddd; padding: 15px; margin-bottom: 10px; border-radius: 8px; } .task-item.active { border-left: 5px solid var(--btn-success); background: #f1f8e9; }
+        .rank-info-box { background: #fff8e1; padding: 15px; border-radius: 10px; text-align: center; margin-bottom: 15px; border: 2px solid #ffecb3; }
+        .rank-icon-large { font-size: 3em; display: block; margin-bottom: 5px; }
+        .score-history, .grading-table { width: 100%; border-collapse: collapse; margin-top: 10px; } .score-history td, .grading-table td { padding: 10px; border-bottom: 1px solid #eee; } .score-val { font-weight: bold; color: #e67e22; text-align: right; }
+        .grading-table input { width: 60px; text-align: center; padding: 6px; border: 1px solid #ccc; border-radius: 4px; font-weight:bold; }
+    </style>
+</head>
+<body>
+    
+    <div class="overlay"></div>
+
+    <header>
+        <h1 class="class-title">🚀 Lớp 4C Online</h1>
+        <div style="display:flex; gap:10px; align-items:center;">
+            <div id="currentUserDisplay" style="font-weight:bold; color:#e67e22; display:none;"></div>
+            <div class="status-badge" id="statusBadge" onclick="window.handleTeacherDeskClick()">
+                <span id="lockIcon">🔒</span> <span id="statusText">Chế độ xem</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="classroom-area">
+        <div class="desk-column" id="colLeft"></div>
+        <div class="desk-column" id="colMiddle"></div>
+        <div class="desk-column" id="colRight"></div>
+        <div class="teacher-desk" onclick="window.handleTeacherDeskClick()">
+            <div style="font-size: 2.5em;">👩‍🏫</div>
+            <div class="teacher-info">GV: Nguyễn Thị Thúy An</div>
+        </div>
+    </div>
+
+    <div id="chatWidgetBtn" class="chat-widget-btn" onclick="window.toggleChatWindow()">💬</div>
+    <div id="chatWindow" class="chat-window">
+        <div class="chat-header"><span>💬 Chat Lớp 4C</span><span style="cursor:pointer" onclick="window.toggleChatWindow()">✖</span></div>
+        <div class="chat-body" id="chatBody"></div>
+        <div class="chat-footer"><input type="text" id="chatInput" placeholder="Nhập tin nhắn..." onkeypress="window.handleChatKey(event)"><button class="btn btn-primary" style="margin:0; padding:5px 15px;" onclick="window.sendChat()">Gửi</button></div>
+    </div>
+
+    <div id="teacherModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header"><h2>📚 Quản Lý</h2><span class="close-btn" onclick="window.closeModal('teacherModal')">&times;</span></div>
+            <div style="margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 15px;">
+                <button class="btn btn-primary" onclick="window.generateAccounts()">🔐 Cấp tài khoản</button>
+            </div>
+            <label style="font-weight:bold; color:#006064;">Nội dung bài tập:</label>
+            <textarea id="taskNameInput" placeholder="VD: Toán trang 15..."></textarea>
+            <input type="hidden" id="taskIdHidden">
+            <button class="btn btn-primary btn-full" id="btnSaveTask" onclick="window.saveTask()">+ Lưu & Thêm</button>
+            <button class="btn btn-full" id="btnCancelEdit" onclick="window.resetForm()" style="background:#95a5a6; display:none;">Hủy sửa</button>
+            <h3 style="color:#00838f; margin-top:20px;">Danh sách</h3>
+            <ul class="task-list" id="taskListContainer"></ul>
+        </div>
+    </div>
+
+    <div id="studentInfoModal" class="modal">
+        <div class="modal-content" style="width: 450px; background: #fff;">
+            <div class="modal-header"><h2 id="infoStudentName">Tên</h2><span class="close-btn" onclick="window.closeModal('studentInfoModal')">&times;</span></div>
+            <div class="rank-info-box">
+                <span class="rank-icon-large" id="infoRankIcon">🌾</span>
+                <div class="rank-title-large" id="infoRankTitle">Thường Dân</div>
+                <div style="color:#666; font-size:0.9em; margin-top:5px;">Điểm tích lũy: <strong id="infoTotalScore" style="color:#d35400; font-size:1.3em;">0</strong></div>
+            </div>
+            <div id="studentLockedView">
+                <div class="blur-content"><h4 style="margin-bottom:5px;">Chi tiết:</h4><table class="score-history"><tr><td>Bài tập...</td><td class="score-val">10</td></tr></table></div>
+                <div class="locked-message">🔒 Đăng nhập để xem</div>
+                <button class="btn btn-primary btn-full" onclick="window.showLoginModal()">🔑 Đăng nhập</button>
+            </div>
+            <div id="studentUnlockedView" style="display:none;">
+                <button class="btn btn-game btn-full" style="font-size:1.2em; margin-bottom:15px;" onclick="window.openGameMenu()">🎮 Vào Khu Vui Chơi</button>
+                <h4 style="margin-bottom:5px;">Chi tiết thành tích:</h4>
+                <div style="max-height: 200px; overflow-y:auto; border:1px solid #eee; border-radius:8px; padding:0 10px;"><table class="score-history" id="studentTaskList"></table></div>
+                <button class="btn btn-danger btn-full" style="margin-top:10px;" onclick="window.logout()">Đăng xuất</button>
+            </div>
+            <div id="adminActions" style="margin-top:20px; text-align:center; display:none; border-top:1px dashed #ccc; padding-top:15px;">
+                <button class="btn btn-primary" onclick="window.renameStudent()">✏️ Đổi tên</button>
+                <div id="credentialDisplay" style="margin-top:10px; font-family:monospace; background:#eee; padding:5px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="loginModal" class="modal">
+        <div class="modal-content" style="width: 350px;">
+            <div class="modal-header"><h2>🔑 Đăng Nhập</h2><span class="close-btn" onclick="window.closeModal('loginModal')">&times;</span></div>
+            <input type="text" id="loginUser" placeholder="Tên đăng nhập" style="width:100%; padding:10px; margin-bottom:10px;">
+            <input type="password" id="loginPass" placeholder="Mật khẩu" style="width:100%; padding:10px; margin-bottom:10px;">
+            <button class="btn btn-success btn-full" onclick="window.performLogin()">Đăng nhập</button>
+        </div>
+    </div>
+
+    <div id="gameMenuModal" class="modal">
+        <div class="modal-content" style="width: 400px; text-align:center; background:#fff9c4;">
+            <div class="modal-header"><h2>🎮 Khu Vui Chơi</h2><span class="close-btn" onclick="window.closeModal('gameMenuModal')">&times;</span></div>
+            <button class="btn btn-primary btn-full" style="height:60px; font-size:1.1em;" onclick="window.setupGame('single')">👤 Chơi 1 mình (+1đ)</button>
+            <button class="btn btn-game btn-full" style="height:60px; font-size:1.1em;" onclick="window.showMultiplayerMenu()">👥 Chơi cùng bạn (+1.5đ)</button>
+        </div>
+    </div>
+
+    <div id="lobbyModal" class="modal">
+        <div class="modal-content" style="width: 450px; text-align:center;">
+            <div class="modal-header"><h2>👥 Phòng Chờ</h2><span class="close-btn" onclick="window.closeModal('lobbyModal')">&times;</span></div>
+            <div id="lobbyMain">
+                <button class="btn btn-success btn-full" onclick="window.createRoom()">🏠 Tạo phòng mới</button>
+                <div style="margin:10px 0; color:#888;">--- HOẶC ---</div>
+                <input type="number" id="joinRoomId" placeholder="Nhập số phòng..." style="padding:10px; width:60%; text-align:center; font-weight:bold;">
+                <button class="btn btn-primary" onclick="window.joinRoom()">Vào phòng</button>
+            </div>
+            <div id="lobbyWaiting" style="display:none;">
+                <h3 style="color:#d35400;">PHÒNG SỐ: <span id="currentRoomId" style="font-size:1.5em;"></span></h3>
+                <div id="hostSettingsArea" style="background:#e0f7fa; padding:10px; border-radius:8px; margin-bottom:10px; display:none;">
+                    <label><b>Chọn số câu hỏi:</b></label>
+                    <div style="display:flex; justify-content:center; gap:10px; margin-top:5px;">
+                        <button class="btn btn-primary btn-sm" onclick="window.updateRoomSettings(10)">10 Câu</button>
+                        <button class="btn btn-primary btn-sm" onclick="window.updateRoomSettings(15)">15 Câu</button>
+                        <button class="btn btn-primary btn-sm" onclick="window.updateRoomSettings(20)">20 Câu</button>
+                    </div>
+                </div>
+                <div class="room-box">
+                    <div style="border-bottom:1px dashed #ccc; padding-bottom:5px; margin-bottom:5px;">
+                        <b>Gói câu hỏi:</b> <span id="displayQCount" style="color:red; font-weight:bold;">10</span> câu
+                        <br><b>Thời gian:</b> <span id="displayTimeLimit">5</span> phút
+                    </div>
+                    <div class="player-row"><span>🏠 Chủ phòng: <b id="hostNameDisplay">...</b></span><span id="hostStatus" class="status-wait">Chưa sẵn sàng</span></div>
+                    <div class="player-row"><span>👤 Khách mời: <b id="guestNameDisplay">...</b></span><span id="guestStatus" class="status-wait">Đang chờ...</span></div>
+                </div>
+                <div id="lobbyControls">
+                    <button id="btnReady" class="btn btn-success btn-full" onclick="window.setReady()">✅ SẴN SÀNG</button>
+                    <div id="countDownText" style="color:red; font-weight:bold; margin:10px 0; display:none;"></div>
+                    <button class="btn btn-danger" onclick="window.cancelRoom()" style="margin-top:10px;">Thoát phòng</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="gameInterfaceModal" class="modal">
+        <div class="modal-content" style="width: 650px; background: #fff;">
+            <div id="gameConfig" style="text-align:center; display:none;">
+                <h3>Chọn số lượng câu hỏi:</h3>
+                <button class="btn btn-primary" onclick="window.startSingleGame(10)">10 Câu</button>
+                <button class="btn btn-primary" onclick="window.startSingleGame(15)">15 Câu</button>
+                <button class="btn btn-primary" onclick="window.startSingleGame(20)">20 Câu</button>
+            </div>
+            <div id="gamePlay" style="display:none;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:15px; align-items:center;">
+                    <div class="timer-display" id="timeDisplay">00:00</div>
+                    <div>Câu: <b id="qCurrent">1</b>/<b id="qTotal">10</b></div>
+                    <div>Điểm: <b id="gameScore" style="color:red; font-size:1.2em;">0</b></div>
+                </div>
+                <div class="question-box" id="qText">Nội dung câu hỏi?</div>
+                <div class="answers-grid" id="qAnswers"></div>
+            </div>
+            <div id="gameWaitingResult" style="display:none; text-align:center; padding:30px;">
+                <h3>⏳ Đã hoàn thành phần thi!</h3>
+                <p>Đang chờ đối thủ hoàn thành...</p>
+                <div style="font-size:3em;">🏃💨</div>
+            </div>
+            <div id="gameResult" style="display:none; text-align:center;">
+                <h2 style="color:#e67e22">🏆 KẾT QUẢ</h2>
+                <div style="font-size:1.2em; margin-bottom:20px;" id="resultMsg"></div>
+                <div style="font-size:3em; margin-bottom:20px;">🎉</div>
+                <button class="btn btn-primary" onclick="window.exitGame()">🚪 Thoát ra sảnh</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="gradingModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header"><h2>📝 Bảng Điểm</h2><span class="close-btn" onclick="window.closeModal('gradingModal')">&times;</span></div>
+            <div id="gradingTitle" style="font-weight:bold; margin-bottom:15px;"></div>
+            <div style="max-height: 55vh; overflow-y:auto;"><table class="grading-table"><tbody id="gradingList"></tbody></table></div>
+            <div style="margin-top:20px; text-align:right;"><button class="btn btn-success" onclick="window.closeModal('gradingModal')">💾 Hoàn tất</button></div>
+        </div>
+    </div>
+
+    <script src="questions.js"></script>
+
+    <script type="module">
+        // --- 1. DÁN FIREBASE CONFIG CỦA BẠN VÀO DƯỚI ĐÂY ---
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, set, onValue, update, remove, get, child } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBtAUcqSKT76SMSu_MMCFQnJDYfgG20Zqs",
+            authDomain: "lop4c-manager.firebaseapp.com",
+            databaseURL: "https://lop4c-manager-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "lop4c-manager",
+            storageBucket: "lop4c-manager.firebasestorage.app",
+            messagingSenderId: "609004036660",
+            appId: "1:609004036660:web:102e03082ecddf064ee061"
+        };
+
+        // Khởi tạo Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const ROOT_REF = "lop4c_data"; // Nơi lưu trữ tất cả dữ liệu
+
+        // Global Variables
+        const ADMIN_PASSWORD = "170694";
+        const TIME_CONFIG = { 10: 300, 15: 480, 20: 720 };
+        
+        let isAdmin = false;
+        let students = []; 
+        let assignments = [];
+        let chatMessages = [];
+        let currentUser = null; 
+        let currentStudentIndex = -1; 
+        
+        let gameMode = 'single'; 
+        let currentQuestions = [];
+        let currentQIndex = 0;
+        let score = 0;
+        let gameTimerInterval = null;
+        let roomWaitInterval = null;
+        let activeRoomId = null;
+        let myRoomRole = null;
+
+        // --- DATA SYNC WITH FIREBASE ---
+        // Thay vì localStorage, ta lắng nghe sự thay đổi từ Firebase
+        function initDataSync() {
+            const dataRef = ref(db, ROOT_REF);
+            onValue(dataRef, (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    students = data.students || [];
+                    assignments = data.assignments || [];
+                    chatMessages = data.chat || [];
+                } else {
+                    // Chưa có dữ liệu, khởi tạo mảng rỗng
+                    if (students.length === 0) {
+                        for(let i=0; i<30; i++) students.push({ name: "", grades: {}, extraScore: 0, username: "", password: "" });
+                        // Lưu ngược lại lên Firebase lần đầu
+                        saveDataToFirebase();
+                    }
+                }
+                renderClassroom();
+                // Nếu đang mở chat window, render lại chat
+                const chatWin = document.getElementById('chatWindow');
+                if (chatWin.style.display === 'flex') renderChat();
+                
+                // Cập nhật giao diện nếu đang ở phòng chờ hoặc chơi game
+                if (activeRoomId) {
+                    // Logic realtime game xử lý riêng qua listener phòng
+                }
+            });
+        }
+
+        // Hàm lưu dữ liệu chung
+        function saveDataToFirebase() {
+            update(ref(db, ROOT_REF), {
+                students: students,
+                assignments: assignments,
+                chat: chatMessages
+            });
+        }
+
+        // --- GLOBAL FUNCTIONS EXPORT TO WINDOW (Để HTML onclick gọi được) ---
+        window.saveTask = function() {
+            const idInput = document.getElementById('taskIdHidden').value;
+            const content = document.getElementById('taskNameInput').value.trim();
+            if (!content) return alert("Nhập nội dung!");
+            if (idInput) { assignments.find(t => t.id == idInput).name = content; }
+            else { assignments.unshift({ id: Date.now(), name: content, date: new Date().toLocaleString(), assigned: false }); }
+            saveDataToFirebase(); renderTaskList(); resetForm();
+        }
+
+        window.handleTeacherDeskClick = function() {
+            if (isAdmin) { resetForm(); renderTaskList(); document.getElementById('teacherModal').style.display = 'flex'; }
+            else { let pass = prompt("🔑 Mật khẩu GV:"); if (pass === ADMIN_PASSWORD) { isAdmin = true; updateStatusUI(); alert("🔓 Chào mừng cô giáo!"); } }
+        }
+
+        window.renameStudent = function() {
+            let index = currentStudentIndex;
+            let newName = prompt("Tên mới:", students[index].name);
+            if (newName) { 
+                students[index].name = newName.trim(); 
+                saveDataToFirebase(); 
+                document.getElementById('infoStudentName').innerText = newName; 
+            }
+        }
+
+        window.generateAccounts = function() {
+            if(!confirm("Tạo tài khoản cho học sinh chưa có?")) return;
+            students.forEach((s, i) => {
+                if (s.name && !s.username) {
+                    s.username = removeVietnameseTones(s.name.replace(/\s/g, '').toLowerCase()) + (i+1);
+                    s.password = Math.floor(1000 + Math.random() * 9000).toString();
+                }
+            });
+            saveDataToFirebase();
+            alert("Đã cấp tài khoản!");
+        }
+
+        window.performLogin = function() {
+            let u = document.getElementById('loginUser').value;
+            let p = document.getElementById('loginPass').value;
+            let found = students.findIndex(s => s.username === u && s.password === p);
+            if (found !== -1) {
+                currentUser = { index: found, name: students[found].name };
+                alert(`Xin chào ${currentUser.name}!`);
+                window.closeModal('loginModal');
+                window.handleStudentClick(found);
+                updateHeaderUser();
+            } else { alert("Sai thông tin!"); }
+        }
+
+        window.logout = function() {
+            currentUser = null;
+            window.closeModal('studentInfoModal');
+            alert("Đã đăng xuất.");
+            updateHeaderUser();
+            document.getElementById('chatWidgetBtn').style.display='none';
+            document.getElementById('chatWindow').style.display='none';
+        }
+
+        window.handleStudentClick = function(index) {
+            currentStudentIndex = index; const student = students[index];
+            if (!student.name) { if (isAdmin) window.renameStudent(); return; }
+            document.getElementById('infoStudentName').innerText = student.name;
+            let totalScore = calculateTotal(student); let rank = getRank(totalScore);
+            document.getElementById('infoRankIcon').innerText = rank.icon; document.getElementById('infoRankTitle').innerText = rank.title;
+            document.getElementById('infoRankTitle').style.color = rank.color; document.getElementById('infoTotalScore').innerText = totalScore;
+            
+            const lockedView = document.getElementById('studentLockedView'); const unlockedView = document.getElementById('studentUnlockedView');
+            const adminActions = document.getElementById('adminActions');
+            let hasAccess = isAdmin || (currentUser && currentUser.index === index);
+            if (hasAccess) {
+                lockedView.style.display = 'none'; unlockedView.style.display = 'block';
+                const list = document.getElementById('studentTaskList'); list.innerHTML = '';
+                const assignedTasks = assignments.filter(t => t.assigned);
+                if (assignedTasks.length > 0) assignedTasks.forEach(task => { let score = (student.grades && student.grades[task.id]) ? student.grades[task.id] : '-'; list.innerHTML += `<tr><td>${task.name}</td><td class="score-val">${score}</td></tr>`; });
+                if (student.extraScore > 0) list.innerHTML += `<tr><td style="color:#8e44ad; font-weight:bold;">🎮 Điểm Trò Chơi</td><td class="score-val">${student.extraScore}</td></tr>`;
+                if (list.innerHTML === '') list.innerHTML = '<tr><td colspan="2" style="text-align:center;">Chưa có dữ liệu</td></tr>';
+            } else { lockedView.style.display = 'block'; unlockedView.style.display = 'none'; }
+            adminActions.style.display = isAdmin ? 'block' : 'none';
+            if (isAdmin) document.getElementById('credentialDisplay').innerHTML = student.username ? `User: <b>${student.username}</b> - Pass: <b>${student.password}</b>` : `<small style='color:red'>Chưa có tài khoản</small>`;
+            document.getElementById('studentInfoModal').style.display = 'flex';
+        }
+
+        // --- CHAT FUNCTIONS ---
+        window.toggleChatWindow = function() {
+            const win = document.getElementById('chatWindow');
+            if (win.style.display === 'flex') win.style.display = 'none';
+            else { win.style.display = 'flex'; renderChat(); document.getElementById('chatBody').scrollTop = document.getElementById('chatBody').scrollHeight; }
+        }
+        window.handleChatKey = function(e) { if (e.key === 'Enter') window.sendChat(); }
+        window.sendChat = function() {
+            const input = document.getElementById('chatInput');
+            const text = input.value.trim();
+            if(!text) return;
+            let senderName = isAdmin ? "GV: Nguyễn Thị Thúy An" : currentUser.name;
+            let role = isAdmin ? "teacher" : "student";
+            let msg = { sender: senderName, role: role, text: text, time: new Date().toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'}) };
+            chatMessages.push(msg);
+            saveDataToFirebase();
+            input.value = '';
+        }
+
+        // --- GAME ROOM FUNCTIONS (FIREBASE SYNC) ---
+        // Thay vì localStorage, ta dùng node 'rooms' trên Firebase
+        window.createRoom = function() {
+            let roomId = Math.floor(1000 + Math.random() * 9000);
+            activeRoomId = roomId; myRoomRole = 'host';
+            let initialQ = getGameQuestions(10);
+            let roomData = {
+                id: roomId, host: currentUser.name, guest: null, qCount: 10,
+                questions: initialQ, status: 'setup', 
+                hostReady: false, guestReady: false,
+                scores: { host: null, guest: null }, created: Date.now()
+            };
+            set(ref(db, 'rooms/' + roomId), roomData);
+            subscribeToRoom(roomId);
+        }
+
+        window.joinRoom = function() {
+            let id = document.getElementById('joinRoomId').value;
+            get(child(ref(db), 'rooms/' + id)).then((snapshot) => {
+                if (snapshot.exists()) {
+                    let data = snapshot.val();
+                    if (data.status !== 'waiting' && data.status !== 'setup') { alert("Phòng đã đầy!"); return; }
+                    activeRoomId = id; myRoomRole = 'guest';
+                    update(ref(db, 'rooms/' + id), { guest: currentUser.name });
+                    subscribeToRoom(id);
+                } else {
+                    alert("Phòng không tồn tại!");
+                }
+            });
+        }
+
+        function subscribeToRoom(roomId) {
+            onValue(ref(db, 'rooms/' + roomId), (snapshot) => {
+                const data = snapshot.val();
+                if (!data) { 
+                    // Phòng bị xóa
+                    if (activeRoomId) { alert("Phòng đã bị hủy!"); window.closeModal('lobbyModal'); activeRoomId = null; }
+                    return;
+                }
+                showLobbyUI(data);
+                // Check Start Game
+                if (data.hostReady && data.guestReady && data.status !== 'playing') {
+                    if (myRoomRole === 'host') update(ref(db, 'rooms/' + roomId), { status: 'playing' });
+                }
+                if (data.status === 'playing') enterGame(data);
+            });
+        }
+
+        window.updateRoomSettings = function(count) {
+            let qs = getGameQuestions(count);
+            update(ref(db, 'rooms/' + activeRoomId), { qCount: count, questions: qs });
+        }
+
+        window.setReady = function() {
+            if (myRoomRole === 'host') update(ref(db, 'rooms/' + activeRoomId), { hostReady: true, status: 'waiting' });
+            else update(ref(db, 'rooms/' + activeRoomId), { guestReady: true });
+        }
+
+        window.cancelRoom = function() {
+            if (activeRoomId) remove(ref(db, 'rooms/' + activeRoomId));
+            activeRoomId = null; window.closeModal('lobbyModal');
+        }
+
+        // --- GAMEPLAY LOGIC ---
+        window.startSingleGame = function(count) {
+            gameMode = 'single'; currentQuestions = getGameQuestions(count);
+            document.getElementById('gameConfig').style.display = 'none';
+            document.getElementById('gamePlay').style.display = 'block';
+            currentQIndex = 0; score = 0;
+            startTimer(TIME_CONFIG[count]);
+            loadQuestion();
+        }
+
+        function enterGame(data) {
+            window.closeModal('lobbyModal');
+            currentQuestions = data.questions;
+            let timeLimit = TIME_CONFIG[data.qCount];
+            document.getElementById('gameInterfaceModal').style.display = 'flex';
+            document.getElementById('gameConfig').style.display = 'none';
+            document.getElementById('gamePlay').style.display = 'block';
+            document.getElementById('gameWaitingResult').style.display = 'none';
+            document.getElementById('gameResult').style.display = 'none';
+            currentQIndex = 0; score = 0;
+            startTimer(timeLimit);
+            loadQuestion();
+        }
+
+        window.answerQuestion = function(idx) {
+            let qData = currentQuestions[currentQIndex];
+            let btns = document.getElementsByClassName('answer-btn');
+            for(let b of btns) b.onclick = null;
+            if (idx === qData.c) { btns[idx].classList.add('correct'); score += (gameMode === 'multi' ? 1.5 : 1); } 
+            else { btns[idx].classList.add('wrong'); btns[qData.c].classList.add('correct'); }
+            document.getElementById('gameScore').innerText = score;
+            setTimeout(() => { currentQIndex++; loadQuestion(); }, 1000);
+        }
+
+        window.exitGame = function() {
+            window.closeModal('gameInterfaceModal');
+            if (gameMode === 'multi' && activeRoomId) window.cancelRoom();
+        }
+
+        // ... Các hàm phụ trợ khác (loadQuestion, startTimer, getGameQuestions, ...) 
+        // Tôi đã tích hợp sẵn logic này vào window.* hoặc function cục bộ ở trên.
+        // Để đảm bảo code gọn, tôi viết lại các hàm cần thiết để export ra window dưới đây:
+
+        function startTimer(seconds) {
+            if (gameTimerInterval) clearInterval(gameTimerInterval);
+            let timeLeft = seconds; updateTimeDisplay(timeLeft);
+            gameTimerInterval = setInterval(() => {
+                timeLeft--; updateTimeDisplay(timeLeft);
+                if (timeLeft <= 0) { clearInterval(gameTimerInterval); finishGame(); }
+            }, 1000);
+        }
+        function updateTimeDisplay(sec) { document.getElementById('timeDisplay').innerText = `${Math.floor(sec/60)}:${sec%60<10?'0'+(sec%60):sec%60}`; }
+        function loadQuestion() {
+            if (currentQIndex >= currentQuestions.length) { finishGame(); return; }
+            let qData = currentQuestions[currentQIndex];
+            document.getElementById('qCurrent').innerText = currentQIndex + 1;
+            document.getElementById('qTotal').innerText = currentQuestions.length;
+            document.getElementById('qText').innerText = qData.q;
+            let html = '';
+            qData.a.forEach((ans, idx) => { html += `<div class="answer-btn" onclick="window.answerQuestion(${idx})">${ans}</div>`; });
+            document.getElementById('qAnswers').innerHTML = html;
+        }
+        function finishGame() {
+            clearInterval(gameTimerInterval);
+            document.getElementById('gamePlay').style.display = 'none';
+            if (gameMode === 'single') {
+                showResultScreen(`Bạn đạt ${score} điểm!`);
+                saveScoreToStudent();
+            } else {
+                // Multi: Gửi điểm lên Firebase
+                let updateData = {};
+                updateData[`scores/${myRoomRole}`] = score;
+                update(ref(db, 'rooms/' + activeRoomId), updateData);
+                waitForOpponentResult();
+            }
+        }
+        function waitForOpponentResult() {
+            document.getElementById('gameWaitingResult').style.display = 'block';
+            // Listener trong subscribeToRoom sẽ không bắt được thay đổi sâu trong object scores dễ dàng nếu không query, 
+            // nên ta dùng onValue riêng hoặc check thủ công.
+            // Ở đây tôi dùng onValue ở subscribeToRoom để check data change.
+            // Logic check kết quả:
+            onValue(ref(db, 'rooms/' + activeRoomId), (snapshot) => {
+                let data = snapshot.val();
+                if(data && data.scores.host !== null && data.scores.guest !== null) {
+                    document.getElementById('gameWaitingResult').style.display = 'none';
+                    let myScore = data.scores[myRoomRole];
+                    let oppScore = data.scores[myRoomRole === 'host' ? 'guest' : 'host'];
+                    let msg = myScore > oppScore ? "🎉 BẠN THẮNG!" : (myScore < oppScore ? "😢 BẠN THUA!" : "🤝 HÒA NHAU!");
+                    msg += `<br>${myScore} - ${oppScore}`;
+                    showResultScreen(msg);
+                    saveScoreToStudent();
+                }
+            });
+        }
+        function showResultScreen(msg) { document.getElementById('gameResult').style.display = 'block'; document.getElementById('resultMsg').innerHTML = msg; }
+        function saveScoreToStudent() {
+            if (currentUser) {
+                students[currentUser.index].extraScore = (students[currentUser.index].extraScore || 0) + score;
+                saveDataToFirebase();
+            }
+        }
+
+        // --- SUPPORT VARS ---
+        window.closeModal = function(id) { document.getElementById(id).style.display='none'; }
+        window.showLoginModal = function() { window.closeModal('studentInfoModal'); document.getElementById('loginModal').style.display = 'flex'; }
+        window.openGameMenu = function() { window.closeModal('studentInfoModal'); document.getElementById('gameMenuModal').style.display = 'flex'; }
+        window.showMultiplayerMenu = function() { gameMode='multi'; window.closeModal('gameMenuModal'); document.getElementById('lobbyModal').style.display='flex'; document.getElementById('lobbyMain').style.display='block'; document.getElementById('lobbyWaiting').style.display='none'; }
+        window.setupGame = function(m) { window.startSingleGame(10); } // Shortcut for single button
+        
+        // --- HELPER ---
+        function renderChat() {
+            const body = document.getElementById('chatBody'); let html = '';
+            let myName = isAdmin ? "GV: Nguyễn Thị Thúy An" : (currentUser ? currentUser.name : "");
+            chatMessages.forEach(msg => {
+                let isMe = msg.sender === myName;
+                let typeClass = isMe ? 'me' : 'other';
+                if (msg.role === 'teacher' && !isMe) typeClass += ' teacher';
+                html += `<div class="msg-row ${typeClass}">${!isMe ? `<div class="msg-sender">${msg.sender}</div>` : ''}<div class="msg-bubble" title="${msg.time}">${msg.text}</div></div>`;
+            });
+            body.innerHTML = html;
+        }
+        function renderTaskList() { const list = document.getElementById('taskListContainer'); list.innerHTML = ''; assignments.forEach(task => { list.innerHTML += `<li class="task-item ${task.assigned?'active':''}"><b>${task.name}</b><br><small>${task.date} ${task.assigned?'(Đã giao)':''}</small><div style="text-align:right; margin-top:5px;"><button class="btn btn-primary" onclick="window.editTask(${task.id})">Sửa</button> <button class="btn btn-success" onclick="window.assignTask(${task.id})">Giao</button> <button class="btn btn-grade" onclick="window.openGrading(${task.id})">Chấm</button> <button class="btn btn-danger" onclick="window.deleteTask(${task.id})">Xóa</button></div></li>`; }); }
+        window.editTask = function(id) { const t=assignments.find(x=>x.id==id); document.getElementById('taskIdHidden').value=t.id; document.getElementById('taskNameInput').value=t.name; document.getElementById('btnCancelEdit').style.display='block'; }
+        window.resetForm = function() { document.getElementById('taskIdHidden').value=''; document.getElementById('taskNameInput').value=''; document.getElementById('btnCancelEdit').style.display='none'; }
+        window.assignTask = function(id) { if(confirm("Giao bài?")) { assignments.find(x=>x.id==id).assigned=true; saveDataToFirebase(); renderTaskList(); } }
+        window.deleteTask = function(id) { if(confirm("Xóa bài?")) { assignments=assignments.filter(x=>x.id!=id); students.forEach(s=>{if(s.grades) delete s.grades[id]}); saveDataToFirebase(); renderTaskList(); renderClassroom(); } }
+        window.openGrading = function(id) { const t=assignments.find(x=>x.id==id); document.getElementById('gradingTitle').innerText=t.name; const list=document.getElementById('gradingList'); list.innerHTML=''; students.forEach((s,i)=>{ if(s.name) list.innerHTML+=`<tr><td>${s.name}</td><td style="text-align:right"><input type="number" onchange="window.saveGrade(${i},${id},this.value)" value="${(s.grades&&s.grades[id])||''}"></td></tr>`; }); document.getElementById('gradingModal').style.display='flex'; }
+        window.saveGrade = function(i,id,v) { if(!students[i].grades) students[i].grades={}; students[i].grades[id]=v; saveDataToFirebase(); renderClassroom(); }
+        
+        function updateStatusUI() { const b = document.getElementById('statusBadge'); if(isAdmin){ b.classList.add('active'); document.getElementById('statusText').innerText="GV (Admin)"; document.getElementById('lockIcon').innerText="🔓"; updateHeaderUser(); } }
+        function updateHeaderUser() { const disp = document.getElementById('currentUserDisplay'); if (currentUser || isAdmin) { disp.style.display = 'block'; disp.innerText = isAdmin ? "Hi, Cô Giáo" : `Hi, ${currentUser.name}`; document.getElementById('chatWidgetBtn').style.display = 'flex'; } else { disp.style.display = 'none'; document.getElementById('chatWidgetBtn').style.display = 'none'; } }
+        function removeVietnameseTones(str) { str = str.replace(/à|á|ạ|ả|ã|â|ầ|ấ|ậ|ẩ|ẫ|ă|ằ|ắ|ặ|ẳ|ẵ/g,"a"); str = str.replace(/è|é|ẹ|ẻ|ẽ|ê|ề|ế|ệ|ể|ễ/g,"e"); str = str.replace(/ì|í|ị|ỉ|ĩ/g,"i"); str = str.replace(/ò|ó|ọ|ỏ|õ|ô|ồ|ố|ộ|ổ|ỗ|ơ|ờ|ớ|ợ|ở|ỡ/g,"o"); str = str.replace(/ù|ú|ụ|ủ|ũ|ư|ừ|ứ|ự|ử|ữ/g,"u"); str = str.replace(/ỳ|ý|ỵ|ỷ|ỹ/g,"y"); str = str.replace(/đ/g,"d"); return str; }
+        
+        // --- GAME HELPERS ---
+        function getGameQuestions(count) {
+            if (typeof questionBank === 'undefined' || questionBank.length === 0) { alert("Lỗi: Không tìm thấy dữ liệu câu hỏi!"); return []; }
+            let q = [], temp = [...questionBank];
+            for(let i=0; i<count; i++) { if (temp.length === 0) break; let idx = Math.floor(Math.random() * temp.length); q.push(temp[idx]); temp.splice(idx, 1); }
+            return q;
+        }
+
+        // --- START ---
+        initDataSync();
+
+    </script>
+</body>
+</html>
