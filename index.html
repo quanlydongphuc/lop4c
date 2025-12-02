@@ -627,6 +627,72 @@
             return q;
         }
 
+        // --- CÁC HÀM BỊ THIẾU (Dán đoạn này vào trước dòng initDataSync) ---
+
+        function getRank(score) {
+            if (score >= 600) return { title: "Chủ Tịch", icon: "👑", color: "#d32f2f" }; 
+            if (score >= 500) return { title: "Giám Đốc", icon: "🎖️", color: "#7b1fa2" };
+            if (score >= 400) return { title: "Trưởng Phòng", icon: "👔", color: "#1565c0" };
+            if (score >= 300) return { title: "Doanh Nhân", icon: "💼", color: "#00838f" };
+            if (score >= 200) return { title: "Thương Gia", icon: "💰", color: "#f9a825" };
+            if (score >= 100) return { title: "Tiểu Thương", icon: "⚖️", color: "#ef6c00" };
+            return { title: "Dân Thường", icon: "👨‍🌾", color: "#5d4037" };
+        }
+
+        function calculateTotal(student) {
+            let taskScore = 0;
+            if (student.grades) {
+                Object.values(student.grades).forEach(g => { 
+                    let val = parseFloat(g); 
+                    if (!isNaN(val)) taskScore += val; 
+                });
+            }
+            return taskScore + (student.extraScore || 0);
+        }
+
+        function renderClassroom() {
+            const colLeft = document.getElementById('colLeft'); 
+            const colMiddle = document.getElementById('colMiddle'); 
+            const colRight = document.getElementById('colRight');
+            colLeft.innerHTML = ''; colMiddle.innerHTML = ''; colRight.innerHTML = '';
+
+            // Tính toán Huy chương
+            const allScores = students.map(s => s.name ? calculateTotal(s) : -1);
+            const uniqueScores = [...new Set(allScores)].filter(s => s > 0).sort((a, b) => b - a);
+            const scoreGold = uniqueScores[0], scoreSilver = uniqueScores[1], scoreBronze = uniqueScores[2];
+
+            students.forEach((student, i) => {
+                let desk = document.createElement('div');
+                desk.className = 'student-desk';
+                if (student.name) {
+                    let totalScore = calculateTotal(student); 
+                    let rank = getRank(totalScore); 
+                    let medalHtml = '';
+                    if (totalScore > 0) {
+                        if (totalScore === scoreGold) medalHtml = '<div class="medal-badge">🥇</div>';
+                        else if (totalScore === scoreSilver) medalHtml = '<div class="medal-badge">🥈</div>';
+                        else if (totalScore === scoreBronze) medalHtml = '<div class="medal-badge">🥉</div>';
+                    }
+                    desk.innerHTML = `
+                        ${medalHtml}
+                        <div class="desk-name">${student.name}</div>
+                        <div class="desk-icon">${rank.icon}</div>
+                        <div class="desk-rank-title" style="background:${rank.color}">${rank.title}</div>
+                        <div class="desk-score">${totalScore} đ</div>
+                    `;
+                } else {
+                    desk.classList.add('empty'); 
+                    desk.innerHTML = `<span>Trống</span>`;
+                }
+                desk.onclick = () => window.handleStudentClick(i);
+                
+                if (i < 10) colLeft.appendChild(desk); 
+                else if (i < 20) colMiddle.appendChild(desk); 
+                else colRight.appendChild(desk); 
+            });
+            updateHeaderUser();
+        }
+
         // --- START ---
         initDataSync();
 
