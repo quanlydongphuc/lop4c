@@ -308,13 +308,202 @@
             update(ref(db, ROOT_REF), { students: students, assignments: assignments, chat: chatMessages });
         }
 
-        // --- CÁC HÀM XỬ LÝ GAME (Đã sửa lỗi) ---
-        
-        // Hàm lấy câu hỏi (Fix lỗi không tìm thấy questionBank)
-        function getGameQuestions(count) {
-            // Truy cập biến toàn cục questionBank (từ file questions.js)
-            const bank = window.questionBank || []; 
+        // --- CÁC HÀM HỖ TRỢ (Helper) ---
+        function getRank(score) {
+            if (score >= 600) return { title: "Chủ Tịch", icon: "👑", color: "#d32f2f" }; 
+            if (score >= 500) return { title: "Giám Đốc", icon: "🎖️", color: "#7b1fa2" };
+            if (score >= 400) return { title: "Trưởng Phòng", icon: "👔", color: "#1565c0" };
+            if (score >= 300) return { title: "Doanh Nhân", icon: "💼", color: "#00838f" };
+            if (score >= 200) return { title: "Thương Gia", icon: "💰", color: "#f9a825" };
+            if (score >= 100) return { title: "Tiểu Thương", icon: "⚖️", color: "#ef6c00" };
+            return { title: "Dân Thường", icon: "👨‍🌾", color: "#5d4037" };
+        }
+
+        function calculateTotal(student) {
+            let taskScore = 0;
+            if (student.grades) {
+                Object.values(student.grades).forEach(g => { 
+                    let val = parseFloat(g); 
+                    if (!isNaN(val)) taskScore += val; 
+                });
+            }
+            return taskScore + (student.extraScore || 0);
+        }
+
+        function removeVietnameseTones(str) {
+            str = str.replace(/à|á|ạ|ả|ã|â|ầ|ấ|ậ|ẩ|ẫ|ă|ằ|ắ|ặ|ẳ|ẵ/g,"a"); 
+            str = str.replace(/è|é|ẹ|ẻ|ẽ|ê|ề|ế|ệ|ể|ễ/g,"e"); 
+            str = str.replace(/ì|í|ị|ỉ|ĩ/g,"i"); 
+            str = str.replace(/ò|ó|ọ|ỏ|õ|ô|ồ|ố|ộ|ổ|ỗ|ơ|ờ|ớ|ợ|ở|ỡ/g,"o"); 
+            str = str.replace(/ù|ú|ụ|ủ|ũ|ư|ừ|ứ|ự|ử|ữ/g,"u"); 
+            str = str.replace(/ỳ|ý|ỵ|ỷ|ỹ/g,"y"); 
+            str = str.replace(/đ/g,"d");
+            return str;
+        }
+
+        // --- HÀM RENDER GIAO DIỆN CHÍNH ---
+        function renderClassroom() {
+            const colLeft = document.getElementById('colLeft'); 
+            const colMiddle = document.getElementById('colMiddle'); 
+            const colRight = document.getElementById('colRight');
+            colLeft.innerHTML = ''; colMiddle.innerHTML = ''; colRight.innerHTML = '';
+
+            const allScores = students.map(s => s.name ? calculateTotal(s) : -1);
+            const uniqueScores = [...new Set(allScores)].filter(s => s > 0).sort((a, b) => b - a);
+            const scoreGold = uniqueScores[0], scoreSilver = uniqueScores[1], scoreBronze = uniqueScores[2];
+
+            students.forEach((student, i) => {
+                let desk = document.createElement('div');
+                desk.className = 'student-desk';
+                if (student.name) {
+                    let totalScore = calculateTotal(student); 
+                    let rank = getRank(totalScore); 
+                    let medalHtml = '';
+                    if (totalScore > 0) {
+                        if (totalScore === scoreGold) medalHtml = '<div class="medal-badge">🥇</div>';
+                        else if (totalScore === scoreSilver) medalHtml = '<div class="medal-badge">🥈</div>';
+                        else if (totalScore === scoreBronze) medalHtml = '<div class="medal-badge">🥉</div>';
+                    }
+                    desk.innerHTML = `
+                        ${medalHtml}
+                        <div class="desk-name">${student.name}</div>
+                        <div class="desk-icon">${rank.icon}</div>
+                        <div class="desk-rank-title" style="background:${rank.color}">${rank.title}</div>
+                        <div class="desk-score">${totalScore} đ</div>
+                    `;
+                } else {
+                    desk.classList.add('empty'); 
+                    desk.innerHTML = `<span>Trống</span>`;
+                }
+                // Gắn sự kiện click thông qua window
+                desk.onclick = () => window.handleStudentClick(i);
+                
+                if (i < 10) colLeft.appendChild(desk); 
+                else if (i < 20) colMiddle.appendChild(desk); 
+                else colRight.appendChild(desk); 
+            });
+            updateHeaderUser();
+        }
+
+        function updateHeaderUser() {
+            const disp = document.getElementById('currentUserDisplay');
+            if (currentUser || isAdmin) {
+                disp.style.display = 'block';
+                disp.innerText = isAdmin ? "Hi, Cô Giáo" : `Hi, ${currentUser.name}`;
+                document.getElementById('chatWidgetBtn').style.display = 'flex';
+            } else {
+                disp.style.display = 'none';
+                document.getElementById('chatWidgetBtn').style.display = 'none';
+            }
+        }
+
+        // --- CÁC HÀM GẮN VÀO WINDOW (ĐỂ HTML GỌI ĐƯỢC) ---
+
+        window.handleTeacherDeskClick = function() {
+            if (isAdmin) { 
+                window.resetForm(); 
+                renderTaskList(); 
+                document.getElementById('teacherModal').style.display = 'flex'; 
+            } else { 
+                let pass = prompt("🔑 Mật khẩu GV:"); 
+                if (pass === ADMIN_PASSWORD) { 
+                    isAdmin = true; 
+                    updateStatusUI(); 
+                    alert("🔓 Chào mừng cô giáo!"); 
+                } 
+            }
+        }
+
+        window.handleStudentClick = function(index) {
+            currentStudentIndex = index; 
+            const student = students[index];
+            if (!student.name) { 
+                if (isAdmin) window.renameStudent(); 
+                return; 
+            }
+
+            document.getElementById('infoStudentName').innerText = student.name;
+            let totalScore = calculateTotal(student); 
+            let rank = getRank(totalScore);
+            document.getElementById('infoRankIcon').innerText = rank.icon; 
+            document.getElementById('infoRankTitle').innerText = rank.title;
+            document.getElementById('infoRankTitle').style.color = rank.color; 
+            document.getElementById('infoTotalScore').innerText = totalScore;
             
+            const lockedView = document.getElementById('studentLockedView'); 
+            const unlockedView = document.getElementById('studentUnlockedView');
+            const adminActions = document.getElementById('adminActions');
+            
+            let hasAccess = isAdmin || (currentUser && currentUser.index === index);
+
+            if (hasAccess) {
+                lockedView.style.display = 'none'; 
+                unlockedView.style.display = 'block';
+                renderStudentTasks(student);
+            } else {
+                lockedView.style.display = 'block'; 
+                unlockedView.style.display = 'none';
+            }
+
+            adminActions.style.display = isAdmin ? 'block' : 'none';
+            if (isAdmin) {
+                document.getElementById('credentialDisplay').innerHTML = student.username ? 
+                    `User: <b>${student.username}</b> - Pass: <b>${student.password}</b>` : 
+                    `<small style='color:red'>Chưa có tài khoản</small>`;
+            }
+            document.getElementById('studentInfoModal').style.display = 'flex';
+        }
+
+        // --- CÁC HÀM XỬ LÝ KHÁC (Đều gắn vào window) ---
+
+        window.renameStudent = function() {
+            let index = currentStudentIndex;
+            let newName = prompt("Tên mới:", students[index].name);
+            if (newName) { 
+                students[index].name = newName.trim(); 
+                saveDataToFirebase(); 
+                document.getElementById('infoStudentName').innerText = newName; 
+            }
+        }
+
+        window.generateAccounts = function() {
+            if(!confirm("Tạo tài khoản cho học sinh chưa có?")) return;
+            students.forEach((s, i) => {
+                if (s.name && !s.username) {
+                    s.username = removeVietnameseTones(s.name.replace(/\s/g, '').toLowerCase()) + (i+1);
+                    s.password = Math.floor(1000 + Math.random() * 9000).toString();
+                }
+            });
+            saveDataToFirebase();
+            alert("Đã cấp tài khoản!");
+        }
+
+        window.performLogin = function() {
+            let u = document.getElementById('loginUser').value;
+            let p = document.getElementById('loginPass').value;
+            let found = students.findIndex(s => s.username === u && s.password === p);
+            if (found !== -1) {
+                currentUser = { index: found, name: students[found].name };
+                alert(`Xin chào ${currentUser.name}!`);
+                window.closeModal('loginModal');
+                window.handleStudentClick(found);
+                updateHeaderUser();
+            } else { alert("Sai thông tin!"); }
+        }
+
+        window.logout = function() {
+            currentUser = null;
+            window.closeModal('studentInfoModal');
+            alert("Đã đăng xuất.");
+            updateHeaderUser();
+            document.getElementById('chatWidgetBtn').style.display='none';
+            document.getElementById('chatWindow').style.display='none';
+        }
+
+        // --- CÁC HÀM GAME VÀ CHAT ---
+        
+        function getGameQuestions(count) {
+            const bank = window.questionBank || []; 
             if (bank.length === 0) {
                 alert("Lỗi: Không tìm thấy dữ liệu câu hỏi! Hãy kiểm tra file questions.js.");
                 return [];
@@ -329,13 +518,12 @@
             return q;
         }
 
-        // Tạo phòng mới
         window.createRoom = function() {
             if (!currentUser) { alert("Vui lòng đăng nhập để chơi!"); return; }
             let roomId = Math.floor(1000 + Math.random() * 9000);
             activeRoomId = roomId; myRoomRole = 'host';
             
-            let initialQ = getGameQuestions(10); // Mặc định 10 câu
+            let initialQ = getGameQuestions(10);
             if(initialQ.length === 0) return;
 
             let roomData = {
@@ -344,12 +532,10 @@
                 hostReady: false, guestReady: false,
                 scores: { host: null, guest: null }, created: Date.now()
             };
-            
             set(ref(db, 'rooms/' + roomId), roomData);
             subscribeToRoom(roomId);
         }
 
-        // Vào phòng
         window.joinRoom = function() {
             if (!currentUser) { alert("Vui lòng đăng nhập để chơi!"); return; }
             let id = document.getElementById('joinRoomId').value;
@@ -369,7 +555,6 @@
             });
         }
 
-        // Lắng nghe trạng thái phòng
         function subscribeToRoom(roomId) {
             onValue(ref(db, 'rooms/' + roomId), (snapshot) => {
                 const data = snapshot.val();
@@ -379,7 +564,6 @@
                 }
                 showLobbyUI(data);
                 
-                // Tự động vào game khi cả 2 sẵn sàng
                 if (data.hostReady && data.guestReady && data.status !== 'playing') {
                     if (myRoomRole === 'host') update(ref(db, 'rooms/' + roomId), { status: 'playing' });
                 }
@@ -404,7 +588,6 @@
             document.getElementById('displayQCount').innerText = data.qCount;
             document.getElementById('displayTimeLimit').innerText = TIME_CONFIG[data.qCount] / 60;
 
-            // Hiển thị nút bấm tùy theo vai trò
             if (myRoomRole === 'host') {
                 document.getElementById('hostSettingsArea').style.display = data.hostReady ? 'none' : 'block';
                 document.getElementById('btnReady').style.display = data.hostReady ? 'none' : 'block';
@@ -437,8 +620,7 @@
             activeRoomId = null; window.closeModal('lobbyModal');
         }
 
-        // --- CÁC HÀM XỬ LÝ CHƠI GAME (Game Loop) ---
-
+        // --- GAMEPLAY ---
         window.startSingleGame = function(count) {
             gameMode = 'single';
             currentQuestions = getGameQuestions(count);
@@ -457,13 +639,11 @@
             window.closeModal('lobbyModal');
             currentQuestions = data.questions;
             let timeLimit = TIME_CONFIG[data.qCount];
-            
             document.getElementById('gameInterfaceModal').style.display = 'flex';
             document.getElementById('gameConfig').style.display = 'none';
             document.getElementById('gamePlay').style.display = 'block';
             document.getElementById('gameWaitingResult').style.display = 'none';
             document.getElementById('gameResult').style.display = 'none';
-            
             currentQIndex = 0; score = 0;
             startTimer(timeLimit);
             loadQuestion();
@@ -472,11 +652,9 @@
         function loadQuestion() {
             if (currentQIndex >= currentQuestions.length) { finishGame(); return; }
             let qData = currentQuestions[currentQIndex];
-            
             document.getElementById('qCurrent').innerText = currentQIndex + 1;
             document.getElementById('qTotal').innerText = currentQuestions.length;
             document.getElementById('qText').innerText = qData.q;
-            
             let html = '';
             qData.a.forEach((ans, idx) => {
                 html += `<div class="answer-btn" onclick="window.answerQuestion(${idx})">${ans}</div>`;
@@ -487,18 +665,9 @@
         window.answerQuestion = function(idx) {
             let qData = currentQuestions[currentQIndex];
             let btns = document.getElementsByClassName('answer-btn');
-            
-            // Khóa click
             for(let b of btns) b.onclick = null;
-
-            if (idx === qData.c) {
-                btns[idx].classList.add('correct');
-                score += (gameMode === 'multi' ? 1.5 : 1);
-            } else {
-                btns[idx].classList.add('wrong');
-                btns[qData.c].classList.add('correct');
-            }
-            
+            if (idx === qData.c) { btns[idx].classList.add('correct'); score += (gameMode === 'multi' ? 1.5 : 1); } 
+            else { btns[idx].classList.add('wrong'); btns[qData.c].classList.add('correct'); }
             document.getElementById('gameScore').innerText = score;
             setTimeout(() => { currentQIndex++; loadQuestion(); }, 1000);
         }
@@ -506,7 +675,6 @@
         function finishGame() {
             clearInterval(gameTimerInterval);
             document.getElementById('gamePlay').style.display = 'none';
-
             if (gameMode === 'single') {
                 showResultScreen(`Bạn đạt ${score} điểm!`);
                 saveScoreToStudent();
@@ -520,32 +688,18 @@
 
         function waitForOpponentResult() {
             document.getElementById('gameWaitingResult').style.display = 'block';
-            
-            // Lắng nghe kết quả từ Firebase
             const roomRef = ref(db, 'rooms/' + activeRoomId);
             const unsubscribe = onValue(roomRef, (snapshot) => {
                 let data = snapshot.val();
                 if(data && data.scores.host !== null && data.scores.guest !== null) {
-                    // Đã có kết quả cả 2
-                    unsubscribe(); // Dừng lắng nghe
+                    unsubscribe();
                     document.getElementById('gameWaitingResult').style.display = 'none';
-                    
                     let myScore = data.scores[myRoomRole];
                     let oppScore = data.scores[myRoomRole === 'host' ? 'guest' : 'host'];
-                    let oppName = myRoomRole === 'host' ? data.guest : data.host;
-                    
-                    let msg = "";
-                    if (myScore > oppScore) {
-                        msg = `🎉 BẠN THẮNG!<br>Bạn: ${myScore} - ${oppName}: ${oppScore}`;
-                        saveScoreToStudent(); // Cộng điểm
-                    } else if (myScore < oppScore) {
-                        msg = `😢 BẠN THUA!<br>Bạn: ${myScore} - ${oppName}: ${oppScore}`;
-                        saveScoreToStudent(); // Cộng điểm (dù thua vẫn được cộng điểm tích lũy)
-                    } else {
-                        msg = `🤝 HÒA NHAU!<br>Cả hai đều ${myScore} điểm`;
-                        saveScoreToStudent();
-                    }
+                    let msg = myScore > oppScore ? "🎉 BẠN THẮNG!" : (myScore < oppScore ? "😢 BẠN THUA!" : "🤝 HÒA NHAU!");
+                    msg += `<br>${myScore} - ${oppScore}`;
                     showResultScreen(msg);
+                    saveScoreToStudent();
                 }
             });
         }
@@ -557,7 +711,6 @@
 
         function saveScoreToStudent() {
             if (currentUser) {
-                // Tìm index mới nhất từ mảng students (do data sync liên tục)
                 let idx = students.findIndex(s => s.username === currentUser.username);
                 if (idx !== -1) {
                     students[idx].extraScore = (students[idx].extraScore || 0) + score;
@@ -568,40 +721,48 @@
 
         window.exitGame = function() {
             window.closeModal('gameInterfaceModal');
-            if (gameMode === 'multi' && activeRoomId) {
-                // Thoát game thì hủy phòng hoặc rời phòng
-                window.cancelRoom();
-            }
+            if (gameMode === 'multi' && activeRoomId) window.cancelRoom();
         }
 
         function startTimer(seconds) {
             if (gameTimerInterval) clearInterval(gameTimerInterval);
             let timeLeft = seconds;
             updateTimeDisplay(timeLeft);
-            
             gameTimerInterval = setInterval(() => {
                 timeLeft--;
                 updateTimeDisplay(timeLeft);
-                if (timeLeft <= 0) {
-                    clearInterval(gameTimerInterval);
-                    finishGame();
-                }
+                if (timeLeft <= 0) { clearInterval(gameTimerInterval); finishGame(); }
             }, 1000);
         }
 
         function updateTimeDisplay(sec) {
-            let m = Math.floor(sec / 60);
-            let s = sec % 60;
-            document.getElementById('timeDisplay').innerText = `${m}:${s < 10 ? '0'+s : s}`;
+            document.getElementById('timeDisplay').innerText = `${Math.floor(sec/60)}:${sec%60<10?'0'+(sec%60):sec%60}`;
         }
 
-        // --- CÁC HÀM BỔ TRỢ & UI (Đầy đủ) ---
-
+        // --- CÁC HÀM UI ---
         window.closeModal = function(id) { document.getElementById(id).style.display='none'; }
         window.showLoginModal = function() { window.closeModal('studentInfoModal'); document.getElementById('loginModal').style.display = 'flex'; }
         window.openGameMenu = function() { window.closeModal('studentInfoModal'); document.getElementById('gameMenuModal').style.display = 'flex'; }
         window.showMultiplayerMenu = function() { gameMode='multi'; window.closeModal('gameMenuModal'); document.getElementById('lobbyModal').style.display='flex'; document.getElementById('lobbyMain').style.display='block'; document.getElementById('lobbyWaiting').style.display='none'; }
         window.setupGame = function(m) { window.startSingleGame(10); }
+
+        window.toggleChatWindow = function() {
+            const win = document.getElementById('chatWindow');
+            if (win.style.display === 'flex') win.style.display = 'none';
+            else { win.style.display = 'flex'; renderChat(); document.getElementById('chatBody').scrollTop = document.getElementById('chatBody').scrollHeight; }
+        }
+        window.handleChatKey = function(e) { if (e.key === 'Enter') window.sendChat(); }
+        window.sendChat = function() {
+            const input = document.getElementById('chatInput');
+            const text = input.value.trim();
+            if(!text) return;
+            let senderName = isAdmin ? "GV: Nguyễn Thị Thúy An" : currentUser.name;
+            let role = isAdmin ? "teacher" : "student";
+            let msg = { sender: senderName, role: role, text: text, time: new Date().toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'}) };
+            chatMessages.push(msg);
+            saveDataToFirebase();
+            input.value = '';
+        }
 
         function renderChat() {
             const body = document.getElementById('chatBody'); let html = '';
@@ -615,71 +776,15 @@
             body.innerHTML = html;
         }
 
-        window.toggleChatWindow = function() {
-            const win = document.getElementById('chatWindow');
-            if (win.style.display === 'flex') win.style.display = 'none';
-            else { win.style.display = 'flex'; renderChat(); document.getElementById('chatBody').scrollTop = document.getElementById('chatBody').scrollHeight; }
-        }
-        window.handleChatKey = function(e) { if (e.key === 'Enter') window.sendChat(); }
-        
-        window.sendChat = function() {
-            const input = document.getElementById('chatInput');
-            const text = input.value.trim();
-            if(!text) return;
-            let senderName = isAdmin ? "GV: Nguyễn Thị Thúy An" : currentUser.name;
-            let role = isAdmin ? "teacher" : "student";
-            let msg = { sender: senderName, role: role, text: text, time: new Date().toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'}) };
-            chatMessages.push(msg);
-            saveDataToFirebase();
-            input.value = '';
+        // --- CÁC HÀM QUẢN LÝ KHÁC (Teacher) ---
+        function renderStudentTasks(student) {
+            const list = document.getElementById('studentTaskList'); list.innerHTML = '';
+            const assignedTasks = assignments.filter(t => t.assigned);
+            if (assignedTasks.length > 0) assignedTasks.forEach(task => { let score = (student.grades && student.grades[task.id]) ? student.grades[task.id] : '-'; list.innerHTML += `<tr><td>${task.name}</td><td class="score-val">${score}</td></tr>`; });
+            if (student.extraScore > 0) list.innerHTML += `<tr><td style="color:#8e44ad; font-weight:bold;">🎮 Điểm Trò Chơi</td><td class="score-val">${student.extraScore}</td></tr>`;
+            if (list.innerHTML === '') list.innerHTML = '<tr><td colspan="2" style="text-align:center;">Chưa có dữ liệu</td></tr>';
         }
 
-        // --- HÀM RENDER LỚP HỌC (Đã bổ sung) ---
-        function getRank(score) {
-            if (score >= 600) return { title: "Chủ Tịch", icon: "👑", color: "#d32f2f" }; 
-            if (score >= 500) return { title: "Giám Đốc", icon: "🎖️", color: "#7b1fa2" };
-            if (score >= 400) return { title: "Trưởng Phòng", icon: "👔", color: "#1565c0" };
-            if (score >= 300) return { title: "Doanh Nhân", icon: "💼", color: "#00838f" };
-            if (score >= 200) return { title: "Thương Gia", icon: "💰", color: "#f9a825" };
-            if (score >= 100) return { title: "Tiểu Thương", icon: "⚖️", color: "#ef6c00" };
-            return { title: "Dân Thường", icon: "👨‍🌾", color: "#5d4037" };
-        }
-
-        function calculateTotal(student) {
-            let taskScore = 0;
-            if (student.grades) {
-                Object.values(student.grades).forEach(g => { let val = parseFloat(g); if (!isNaN(val)) taskScore += val; });
-            }
-            return taskScore + (student.extraScore || 0);
-        }
-
-        function renderClassroom() {
-            const colLeft = document.getElementById('colLeft'); const colMiddle = document.getElementById('colMiddle'); const colRight = document.getElementById('colRight');
-            colLeft.innerHTML = ''; colMiddle.innerHTML = ''; colRight.innerHTML = '';
-
-            const allScores = students.map(s => s.name ? calculateTotal(s) : -1);
-            const uniqueScores = [...new Set(allScores)].filter(s => s > 0).sort((a, b) => b - a);
-            const scoreGold = uniqueScores[0], scoreSilver = uniqueScores[1], scoreBronze = uniqueScores[2];
-
-            students.forEach((student, i) => {
-                let desk = document.createElement('div'); desk.className = 'student-desk';
-                if (student.name) {
-                    let totalScore = calculateTotal(student); let rank = getRank(totalScore); let medalHtml = '';
-                    if (totalScore > 0) {
-                        if (totalScore === scoreGold) medalHtml = '<div class="medal-badge">🥇</div>';
-                        else if (totalScore === scoreSilver) medalHtml = '<div class="medal-badge">🥈</div>';
-                        else if (totalScore === scoreBronze) medalHtml = '<div class="medal-badge">🥉</div>';
-                    }
-                    desk.innerHTML = `${medalHtml}<div class="desk-name">${student.name}</div><div class="desk-icon">${rank.icon}</div><div class="desk-rank-title" style="background:${rank.color}">${rank.title}</div><div class="desk-score">${totalScore} đ</div>`;
-                } else { desk.classList.add('empty'); desk.innerHTML = `<span>Trống</span>`; }
-                desk.onclick = () => window.handleStudentClick(i);
-                
-                if (i < 10) colLeft.appendChild(desk); else if (i < 20) colMiddle.appendChild(desk); else colRight.appendChild(desk); 
-            });
-            updateHeaderUser();
-        }
-
-        // --- CÁC HÀM CỦA GIÁO VIÊN ---
         function renderTaskList() { 
             const list = document.getElementById('taskListContainer'); list.innerHTML = ''; 
             assignments.forEach(task => { list.innerHTML += `<li class="task-item ${task.assigned?'active':''}"><b>${task.name}</b><br><small>${task.date} ${task.assigned?'(Đã giao)':''}</small><div style="text-align:right; margin-top:5px;"><button class="btn btn-primary" onclick="window.editTask(${task.id})">Sửa</button> <button class="btn btn-success" onclick="window.assignTask(${task.id})">Giao</button> <button class="btn btn-grade" onclick="window.openGrading(${task.id})">Chấm</button> <button class="btn btn-danger" onclick="window.deleteTask(${task.id})">Xóa</button></div></li>`; }); 
@@ -697,8 +802,6 @@
         window.saveGrade = function(i,id,v) { if(!students[i].grades) students[i].grades={}; students[i].grades[id]=v; saveDataToFirebase(); renderClassroom(); }
         
         function updateStatusUI() { const b = document.getElementById('statusBadge'); if(isAdmin){ b.classList.add('active'); document.getElementById('statusText').innerText="GV (Admin)"; document.getElementById('lockIcon').innerText="🔓"; updateHeaderUser(); } }
-        function updateHeaderUser() { const disp = document.getElementById('currentUserDisplay'); if (currentUser || isAdmin) { disp.style.display = 'block'; disp.innerText = isAdmin ? "Hi, Cô Giáo" : `Hi, ${currentUser.name}`; document.getElementById('chatWidgetBtn').style.display = 'flex'; } else { disp.style.display = 'none'; document.getElementById('chatWidgetBtn').style.display = 'none'; } }
-        function removeVietnameseTones(str) { str = str.replace(/à|á|ạ|ả|ã|â|ầ|ấ|ậ|ẩ|ẫ|ă|ằ|ắ|ặ|ẳ|ẵ/g,"a"); str = str.replace(/è|é|ẹ|ẻ|ẽ|ê|ề|ế|ệ|ể|ễ/g,"e"); str = str.replace(/ì|í|ị|ỉ|ĩ/g,"i"); str = str.replace(/ò|ó|ọ|ỏ|õ|ô|ồ|ố|ộ|ổ|ỗ|ơ|ờ|ớ|ợ|ở|ỡ/g,"o"); str = str.replace(/ù|ú|ụ|ủ|ũ|ư|ừ|ứ|ự|ử|ữ/g,"u"); str = str.replace(/ỳ|ý|ỵ|ỷ|ỹ/g,"y"); str = str.replace(/đ/g,"d"); return str; }
 
         // --- KHỞI CHẠY ---
         initDataSync();
