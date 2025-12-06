@@ -19,52 +19,30 @@
             --btn-grade: #f39c12; --game-bg: #2c3e50;
             --chat-primary: #0084ff; --chat-teacher: #ff6b00;
         }
-
-        /* --- CẬP NHẬT BODY CHO MOBILE: Cho phép cuộn trang --- */
-        body { 
-            font-family: 'Nunito', sans-serif; margin: 0; 
-            min-height: 100vh; /* Thay height bằng min-height */
-            display: flex; flex-direction: column; 
-            color: var(--text-color); 
-            /* Cho phép cuộn trên mobile */
-            overflow-y: auto; overflow-x: hidden;
-            background-image: url('https://img.freepik.com/free-vector/hand-drawn-back-school-background_23-2149464866.jpg'); 
-            background-size: cover; background-position: center; background-attachment: fixed;
-        }
-
+        body { font-family: 'Nunito', sans-serif; margin: 0; min-height: 100vh; display: flex; flex-direction: column; color: var(--text-color); overflow-y: auto; overflow-x: hidden; background-image: url('https://img.freepik.com/free-vector/hand-drawn-back-school-background_23-2149464866.jpg'); background-size: cover; background-position: center; background-attachment: fixed; }
         .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--bg-overlay); z-index: -1; }
 
-        header { 
-            background: var(--header-bg); padding: 10px 20px; border-bottom: 3px dashed var(--desk-border); 
-            display: flex; justify-content: space-between; align-items: center; 
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05); z-index: 100; position: sticky; top: 0;
-        }
-        h1.class-title { margin: 0; font-size: 1.5em; color: #00838f; text-transform: uppercase; }
+        header { background: var(--header-bg); padding: 10px 20px; border-bottom: 3px dashed var(--desk-border); display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.05); z-index: 100; position: sticky; top: 0; }
+        h1.class-title { margin: 0; font-size: 1.4em; color: #00838f; text-transform: uppercase; flex: 1;}
         
+        .header-controls { display: flex; gap: 10px; align-items: center; }
         .status-badge { background: white; border: 2px solid var(--desk-border); padding: 5px 10px; border-radius: 20px; font-weight: 800; display: flex; align-items: center; gap: 5px; font-size: 0.8em; cursor: pointer; white-space: nowrap;}
         .status-badge.active { background: #ffab91; color: white; border-color: #ff7043; animation: bounce 1s infinite alternate; }
+        .music-btn { background: #fff; border: 2px solid #e91e63; color: #e91e63; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1.2em; transition: 0.3s; }
+        .music-btn.playing { background: #e91e63; color: white; animation: spin 4s linear infinite; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-3px); } }
 
-        /* --- CLASSROOM LAYOUT: Responsive --- */
-        .classroom-area { 
-            flex: 1; padding: 20px; 
-            display: flex; justify-content: center; gap: 40px; 
-            align-items: flex-start; /* Căn trên để mobile ko bị lỗi */
-            flex-wrap: wrap; /* Quan trọng: Cho phép xuống dòng trên mobile */
-        }
-        
-        .desk-column { 
-            display: grid; 
-            grid-template-columns: 1fr 1fr; /* 2 bàn 1 hàng */
-            column-gap: 15px; row-gap: 20px; 
-        }
+        .classroom-area { flex: 1; padding: 20px; display: flex; justify-content: center; gap: 40px; align-items: flex-start; flex-wrap: wrap; padding-bottom: 120px; }
+        .desk-column { display: grid; grid-template-columns: 1fr 1fr; column-gap: 15px; row-gap: 20px; }
 
-        /* --- BÀN HỌC --- */
+        /* BÀN HỌC SINH */
         .student-desk {
-            width: 150px; height: 140px; 
+            width: 160px; height: 145px; 
             background-color: var(--desk-student); border: 3px solid var(--desk-border); border-radius: 16px;
             display: flex; flex-direction: column; align-items: center; justify-content: space-between;
-            padding: 8px 4px; box-sizing: border-box; text-align: center; cursor: pointer;
-            box-shadow: 0 4px 0 var(--desk-shadow); transition: transform 0.1s; position: relative; z-index: 10;
+            padding: 10px 5px; box-sizing: border-box; text-align: center; cursor: pointer;
+            box-shadow: 0 6px 0 var(--desk-shadow); transition: transform 0.1s; position: relative; z-index: 10;
         }
         .student-desk:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--desk-shadow); }
         .student-desk.empty { background-color: rgba(255, 255, 255, 0.6); border-color: #b2dfdb; box-shadow: 0 4px 0 #b2dfdb; color: #80cbc4; justify-content: center; }
@@ -74,57 +52,38 @@
         .student-desk.selected-seat { background-color: #ffeb3b !important; border-color: #f57f17 !important; transform: scale(1.05); box-shadow: 0 0 15px #f57f17; z-index: 20; }
         @keyframes shake { 0% { transform: rotate(0deg); } 25% { transform: rotate(1deg); } 75% { transform: rotate(-1deg); } 100% { transform: rotate(0deg); } }
 
-        .desk-name { font-weight: 800; font-size: 0.85em; color: #006064; line-height: 1.1; margin-top: 5px; min-height: 35px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .desk-name { font-weight: 800; font-size: 0.9em; color: #006064; line-height: 1.1; margin-top: 5px; min-height: 35px; display: flex; align-items: center; justify-content: center; overflow: hidden; white-space: normal; word-wrap: break-word;}
         .desk-icon { font-size: 1.8em; margin: 0; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.15)); }
-        .desk-rank-title { font-size: 0.6em; text-transform: uppercase; font-weight: 900; padding: 2px 4px; border-radius: 4px; color: #fff; background: #bbb; width: 95%; margin-bottom: 2px; }
+        .desk-rank-title { font-size: 0.65em; text-transform: uppercase; font-weight: 900; padding: 2px 4px; border-radius: 4px; color: #fff; background: #bbb; width: 95%; margin-bottom: 2px; }
         .desk-score { font-size: 0.8em; font-weight: bold; color: #e65100; background: rgba(255,255,255,0.8); padding: 0 5px; border-radius: 5px; border: 1px solid #ffccbc; }
-        .medal-badge { position: absolute; top: -15px; right: -10px; font-size: 2.2em; filter: drop-shadow(0 4px 3px rgba(0,0,0,0.3)); z-index: 20; animation: floatMedal 2s infinite ease-in-out; }
-        @keyframes floatMedal { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+        .medal-badge { position: absolute; top: -18px; right: -12px; font-size: 2.5em; filter: drop-shadow(0 4px 3px rgba(0,0,0,0.3)); z-index: 20; animation: floatMedal 2s infinite ease-in-out; }
 
-        /* BÀN GIÁO VIÊN (Responsive) */
         .teacher-desk { 
-            position: fixed; bottom: 20px; right: 20px; 
-            width: 200px; height: 100px; 
-            background-color: var(--desk-teacher); border: 4px solid var(--desk-teacher-border); border-radius: 15px; color: #d84315; 
+            position: fixed; bottom: 20px; right: 20px; width: 70px; height: 70px; 
+            background-color: var(--desk-teacher); border: 3px solid var(--desk-teacher-border); border-radius: 50%; 
             display: flex; flex-direction: column; align-items: center; justify-content: center; 
-            box-shadow: 0 5px 0 #bf360c; cursor: pointer; z-index: 90; transition: 0.3s; 
+            box-shadow: 0 5px 0 #bf360c; cursor: pointer; z-index: 90; transition: 0.3s; font-size: 2em;
         }
-        .teacher-desk:hover { transform: scale(1.02); }
+        .teacher-desk:active { transform: scale(0.9); box-shadow: 0 2px 0 #bf360c; }
 
-        /* --- MOBILE SPECIFIC CSS --- */
+        /* MOBILE RESPONSIVE */
         @media (max-width: 768px) {
-            h1.class-title { font-size: 1.2em; }
-            .classroom-area { gap: 30px; padding-bottom: 100px; /* Chừa chỗ cho bàn GV và Chat */ }
-            
-            /* Xếp chồng 3 cột lên nhau, mỗi cột chiếm full màn hình */
+            .classroom-area { gap: 20px; padding: 10px; }
             .desk-column { width: 100%; gap: 10px; }
-            
-            /* Bàn học sinh co giãn theo màn hình */
-            .student-desk { width: 100%; height: auto; min-height: 130px; }
-            
-            /* Bàn giáo viên biến thành nút nhỏ ở góc */
-            .teacher-desk {
-                width: 60px; height: 60px; border-radius: 50%; right: 20px; bottom: 90px;
-                font-size: 0.7em; padding: 5px; text-align: center;
-                background-image: url('https://cdn-icons-png.flaticon.com/512/1995/1995574.png'); /* Icon GV */
-                background-size: 40px; background-repeat: no-repeat; background-position: center;
-                background-color: #fff; color: transparent; /* Ẩn chữ */
-                border: 3px solid #ff7043;
-            }
-            
-            /* Modal full width trên mobile */
-            .modal-content { width: 90% !important; max-height: 85vh; padding: 15px; }
-            
-            /* Chat window full màn hình hoặc popup nhỏ hơn */
+            .student-desk { width: 100%; height: auto; min-height: 120px; flex-direction: row; padding: 10px 20px; text-align: left; }
+            .desk-name { justify-content: flex-start; font-size: 1em; width: 50%; text-align: left;}
+            .desk-icon { font-size: 2em; }
+            .modal-content { width: 90% !important; max-height: 90vh; padding: 15px; }
             .chat-window { width: 90%; left: 5%; bottom: 85px; height: 60vh; }
             .chat-widget-btn { bottom: 20px; left: 20px; }
+            h1.class-title { font-size: 1.2em; }
         }
 
-        /* --- MODALS & COMMON --- */
+        /* MODALS & COMPONENTS */
         .modal { display: none; position: fixed; z-index: 200; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); justify-content: center; align-items: center; }
-        .modal-content { background-color: var(--modal-bg); padding: 25px; border-radius: 20px; width: 550px; max-height: 85vh; overflow-y: auto; box-shadow: 0 15px 30px rgba(0,0,0,0.25); border: 4px solid #80deea; position: relative; }
+        .modal-content { background-color: var(--modal-bg); padding: 25px; border-radius: 20px; width: 600px; max-height: 85vh; overflow-y: auto; box-shadow: 0 15px 30px rgba(0,0,0,0.25); border: 4px solid #80deea; position: relative; }
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px dashed #b2ebf2; padding-bottom: 10px; }
-        .close-btn { font-size: 1.5em; cursor: pointer; color: #aaa; }
+        .close-btn { font-size: 1.5em; cursor: pointer; color: #aaa; } .close-btn:hover { color: #f44336; }
         
         .chat-widget-btn { position: fixed; bottom: 20px; left: 30px; width: 60px; height: 60px; background-color: var(--chat-primary); border-radius: 50%; box-shadow: 0 4px 15px rgba(0,0,0,0.2); cursor: pointer; z-index: 100; display: flex; align-items: center; justify-content: center; font-size: 30px; color: white; transition: transform 0.2s; display: none; }
         .chat-badge { position: absolute; top: -5px; right: -5px; background: red; color: white; border-radius: 50%; width: 24px; height: 24px; font-size: 12px; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 2px solid white; display: none; }
@@ -133,17 +92,28 @@
         .chat-body { flex: 1; padding: 15px; overflow-y: auto; background: #f9f9f9; display: flex; flex-direction: column; gap: 10px; }
         .chat-footer { padding: 10px; border-top: 1px solid #eee; display: flex; gap: 5px; }
         .chat-footer input { flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 20px; outline: none; }
-        
         .msg-row { display: flex; flex-direction: column; max-width: 80%; } .msg-row.me { align-self: flex-end; align-items: flex-end; } .msg-row.other { align-self: flex-start; align-items: flex-start; }
         .msg-sender { font-size: 0.75em; color: #888; margin-bottom: 2px; margin-left: 5px; } .msg-bubble { padding: 8px 12px; border-radius: 15px; font-size: 0.9em; word-wrap: break-word; }
         .msg-row.me .msg-bubble { background: var(--chat-primary); color: white; border-bottom-right-radius: 2px; } .msg-row.other .msg-bubble { background: #e4e6eb; color: #050505; border-bottom-left-radius: 2px; }
         .msg-row.teacher .msg-sender { color: var(--chat-teacher); font-weight: bold; } .msg-row.teacher .msg-bubble { background: #fff3e0; border: 1px solid var(--chat-teacher); color: #d35400; }
 
         .btn { border: none; padding: 10px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; color: white; transition: 0.2s; margin: 5px 0; width: 100%; box-sizing: border-box; }
-        .btn-sm { width: auto; display: inline-block; }
+        .btn-sm { width: auto; display: inline-block; padding: 5px 10px; font-size: 0.9em; }
         .btn-primary { background: var(--btn-primary); } .btn-success { background: var(--btn-success); } .btn-danger { background: var(--btn-danger); } .btn-grade { background: var(--btn-grade); }
-        .btn-game { background: #8e44ad; box-shadow: 0 4px 0 #6c3483; } .btn-game:active { transform: translateY(4px); box-shadow: none; } .btn:disabled { background: #ccc; cursor: not-allowed; box-shadow: none; }
+        .btn-game { background: #8e44ad; box-shadow: 0 4px 0 #6c3483; } .btn-game:active { transform: translateY(4px); box-shadow: none; } 
+        .btn:disabled, .btn[disabled] { background: #bdc3c7; cursor: not-allowed; box-shadow: none; opacity: 0.6; }
+        .edit-bar { position: fixed; top: 0; left: 0; width: 100%; height: 60px; background: #2c3e50; color: white; display: none; align-items: center; justify-content: center; z-index: 200; box-shadow: 0 2px 10px rgba(0,0,0,0.3); gap: 20px; font-weight: bold; font-size: 1.2em; }
         
+        /* RANK MAP STYLES */
+        .rank-map-container { display: flex; flex-direction: column; align-items: center; gap: 15px; padding: 10px; }
+        .rank-step { display: flex; align-items: center; width: 100%; background: #f9f9f9; padding: 10px; border-radius: 10px; border: 1px solid #eee; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .rank-step-icon { font-size: 2.5em; margin-right: 15px; min-width: 60px; text-align: center; }
+        .rank-step-info { flex: 1; }
+        .rank-step-title { font-weight: bold; font-size: 1.1em; color: #e65100; text-transform: uppercase; }
+        .rank-step-desc { color: #666; font-size: 0.9em; }
+        .rank-arrow-down { color: #00bcd4; font-size: 24px; font-weight: bold; }
+
+        /* GAME UI */
         .room-box { border: 2px dashed #ccc; padding: 20px; margin: 15px 0; border-radius: 10px; background: #f9f9f9; text-align: left; } 
         .player-row { display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #eee; align-items: center; }
         .status-ready { color: green; font-weight: bold; } .status-wait { color: #f39c12; font-style: italic; }
@@ -154,27 +124,38 @@
         .timer-display { font-size: 1.5em; font-weight: bold; color: #d35400; background: #fff3e0; padding: 5px 15px; border-radius: 20px; border: 2px solid #ffccbc; }
         textarea { width: 100%; padding: 12px; border: 2px solid #80deea; border-radius: 8px; font-family: 'Nunito', sans-serif; box-sizing: border-box; min-height: 80px; resize: vertical; margin-bottom: 15px; }
         .task-list { list-style: none; padding: 0; margin: 0; } .task-item { background: white; border: 1px solid #ddd; padding: 15px; margin-bottom: 10px; border-radius: 8px; } .task-item.active { border-left: 5px solid var(--btn-success); background: #f1f8e9; }
-        
         .score-history, .grading-table { width: 100%; border-collapse: collapse; margin-top: 10px; } .score-history td, .grading-table td { padding: 10px; border-bottom: 1px solid #eee; } .score-val { font-weight: bold; color: #e67e22; text-align: right; }
         .grading-table input { width: 60px; text-align: center; padding: 6px; border: 1px solid #ccc; border-radius: 4px; font-weight:bold; }
-        
-        .edit-bar { position: fixed; top: 0; left: 0; width: 100%; height: 60px; background: #2c3e50; color: white; display: none; align-items: center; justify-content: center; z-index: 200; box-shadow: 0 2px 10px rgba(0,0,0,0.3); gap: 20px; font-weight: bold; font-size: 1.2em; }
-        .blur-content { filter: blur(5px); pointer-events: none; user-select: none; } 
-        .locked-message { position: absolute; top: 60%; left: 50%; transform: translate(-50%, -50%); background: rgba(255,255,255,0.9); padding: 10px 20px; border-radius: 10px; font-weight: bold; color: #d32f2f; border: 2px solid #ef5350; z-index: 10; white-space: nowrap; }
+        .blur-content { filter: blur(5px); pointer-events: none; user-select: none; } .locked-message { position: absolute; top: 60%; left: 50%; transform: translate(-50%, -50%); background: rgba(255,255,255,0.9); padding: 10px 20px; border-radius: 10px; font-weight: bold; color: #d32f2f; border: 2px solid #ef5350; z-index: 10; white-space: nowrap; }
+        .game-close-btn { position: absolute; top: 10px; right: 15px; font-size: 28px; cursor: pointer; color: #888; } .game-close-btn:hover { color: red; }
+        .teacher-tools { display: flex; gap: 10px; justify-content: space-between; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 15px; } .teacher-tools .btn { margin: 0; flex: 1; font-size: 0.9em; padding: 10px 5px; }
+        .task-actions { display: flex; gap: 5px; margin-top: 5px; } .task-actions .btn { margin: 0; flex: 1; font-size: 0.85em; padding: 8px 2px; white-space: nowrap; }
     </style>
 </head>
 <body>
     
+    <audio id="bgMusic" loop>
+        <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mp3">
+    </audio>
+    <audio id="sfxCorrect">
+        <source src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg" type="audio/ogg">
+    </audio>
+    <audio id="sfxWrong">
+        <source src="https://actions.google.com/sounds/v1/cartoon/cartoon_boing.ogg" type="audio/ogg">
+    </audio>
+
     <div class="overlay"></div>
 
     <div id="editBar" class="edit-bar">
-        <span>🛠️ CHUYỂN CHỖ</span>
+        <span>🛠️ ĐANG SẮP XẾP CHỖ NGỒI</span>
         <button class="btn btn-success btn-sm" onclick="window.toggleEditMode()">✅ Xong</button>
     </div>
 
     <header>
         <h1 class="class-title">🚀 Lớp 4C Online</h1>
-        <div style="display:flex; gap:10px; align-items:center;">
+        <div class="header-controls">
+            <div class="music-btn" onclick="window.toggleMusic()" id="musicBtn">🎵</div>
+            <div class="status-badge" onclick="window.openRankMap()">🏆 Sơ đồ thăng tiến</div>
             <div id="currentUserDisplay" style="font-weight:bold; color:#e67e22; display:none;"></div>
             <div class="status-badge" id="statusBadge" onclick="window.handleTeacherDeskClick()">
                 <span id="lockIcon">🔒</span> <span id="statusText">Chế độ xem</span>
@@ -187,7 +168,8 @@
         <div class="desk-column" id="colMiddle"></div>
         <div class="desk-column" id="colRight"></div>
         <div class="teacher-desk" onclick="window.handleTeacherDeskClick()">
-            <div class="teacher-info" style="font-size: 1.5em; display: none;">👩‍🏫</div> </div>
+            <div class="teacher-icon">👩‍🏫</div>
+        </div>
     </div>
 
     <div id="chatWidgetBtn" class="chat-widget-btn" onclick="window.toggleChatWindow()">
@@ -199,14 +181,37 @@
         <div class="chat-footer"><input type="text" id="chatInput" placeholder="Nhập tin nhắn..." onkeypress="window.handleChatKey(event)"><button class="btn btn-primary" style="margin:0; padding:5px 15px;" onclick="window.sendChat()">Gửi</button></div>
     </div>
 
+    <div id="rankMapModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header"><h2>🏆 Sơ Đồ Thăng Tiến</h2><span class="close-btn" onclick="window.closeModal('rankMapModal')">&times;</span></div>
+            <div class="rank-map-container">
+                <div class="rank-step"><div class="rank-step-icon">👨‍🌾</div><div class="rank-step-info"><div class="rank-step-title">Dân Thường</div><div class="rank-step-desc">Điểm tích lũy: 0 - 99 điểm</div></div></div>
+                <div class="rank-arrow-down">⬇</div>
+                <div class="rank-step"><div class="rank-step-icon">⚖️</div><div class="rank-step-info"><div class="rank-step-title">Tiểu Thương</div><div class="rank-step-desc">Điểm tích lũy: 100 - 199 điểm</div></div></div>
+                <div class="rank-arrow-down">⬇</div>
+                <div class="rank-step"><div class="rank-step-icon">💰</div><div class="rank-step-info"><div class="rank-step-title">Thương Gia</div><div class="rank-step-desc">Điểm tích lũy: 200 - 299 điểm</div></div></div>
+                <div class="rank-arrow-down">⬇</div>
+                <div class="rank-step"><div class="rank-step-icon">💼</div><div class="rank-step-info"><div class="rank-step-title">Doanh Nhân</div><div class="rank-step-desc">Điểm tích lũy: 300 - 399 điểm</div></div></div>
+                <div class="rank-arrow-down">⬇</div>
+                <div class="rank-step"><div class="rank-step-icon">👔</div><div class="rank-step-info"><div class="rank-step-title">Trưởng Phòng</div><div class="rank-step-desc">Điểm tích lũy: 400 - 499 điểm</div></div></div>
+                <div class="rank-arrow-down">⬇</div>
+                <div class="rank-step"><div class="rank-step-icon">🎖️</div><div class="rank-step-info"><div class="rank-step-title">Giám Đốc</div><div class="rank-step-desc">Điểm tích lũy: 500 - 599 điểm</div></div></div>
+                <div class="rank-arrow-down">⬇</div>
+                <div class="rank-step" style="background:#fff3e0; border:2px solid #ffb74d;"><div class="rank-step-icon">👑</div><div class="rank-step-info"><div class="rank-step-title">CHỦ TỊCH</div><div class="rank-step-desc">Điểm tích lũy: 600 điểm trở lên</div></div></div>
+            </div>
+        </div>
+    </div>
+
     <div id="teacherModal" class="modal">
         <div class="modal-content">
             <div class="modal-header"><h2>📚 Quản Lý</h2><span class="close-btn" onclick="window.closeModal('teacherModal')">&times;</span></div>
-            <div style="margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 15px;">
-                <button class="btn btn-primary" onclick="window.generateAccounts()">🔐 Cấp tài khoản</button>
-                <button class="btn btn-game" onclick="window.toggleEditMode()">🪑 Sắp xếp lại sơ đồ</button>
-                <button class="btn btn-danger" onclick="window.resetAllRankings()">0️⃣ Reset Điểm</button>
+            
+            <div class="teacher-tools">
+                <button class="btn btn-primary" onclick="window.generateAccounts()">🔐 Cấp TK</button>
+                <button class="btn btn-game" onclick="window.toggleEditMode()">🪑 Sắp xếp</button>
+                <button class="btn btn-danger" onclick="window.resetAllRankings()">0️⃣ Reset</button>
             </div>
+
             <label style="font-weight:bold; color:#006064;">Nội dung bài tập:</label>
             <textarea id="taskNameInput" placeholder="VD: Toán trang 15..."></textarea>
             <input type="hidden" id="taskIdHidden">
@@ -239,7 +244,7 @@
             <div id="adminActions" style="margin-top:20px; text-align:center; display:none; border-top:1px dashed #ccc; padding-top:15px;">
                 <button class="btn btn-primary" onclick="window.renameStudent()">✏️ Đổi tên</button>
                 <div style="margin-top:10px; border-top:1px solid #eee; padding-top:10px; display:flex; justify-content:center; gap:10px; align-items:center;">
-                    <label>Sửa điểm:</label>
+                    <label>Sửa điểm tích lũy:</label>
                     <input type="number" id="editScoreInput" style="width:60px; padding:5px; text-align:center;">
                     <button class="btn btn-primary btn-sm" onclick="window.saveStudentScore()">Lưu</button>
                 </div>
@@ -327,7 +332,7 @@
             </div>
 
             <div id="gameResult" style="display:none; text-align:center; padding:20px;">
-                <span class="close-btn" style="position:absolute; top:10px; right:15px; font-size:24px; cursor:pointer;" onclick="window.exitGameSilent()">✖</span>
+                <span class="game-close-btn" onclick="window.exitGameSilent()">✖</span>
                 <h2 style="color:#e67e22; font-size:2em; margin-bottom:10px;">🏆 KẾT QUẢ</h2>
                 <div id="resultMsg" style="font-size:1.4em; margin-bottom:30px; line-height:1.5;"></div>
                 <div style="display:flex; gap:15px; justify-content:center;">
@@ -377,6 +382,7 @@
         let isAdmin = false;
         let isEditMode = false;
         let selectedSeatIndex = null;
+        let isMusicPlaying = false;
         
         let students = []; 
         let assignments = [];
@@ -404,11 +410,22 @@
                     students = data.students || [];
                     assignments = data.assignments || [];
                     let newChat = data.chat || [];
-                    if (newChat.length > chatMessages.length) {
-                        if (!isChatOpen) { unreadChatCount += (newChat.length - chatMessages.length); updateChatBadge(); } 
-                        else { chatMessages = newChat; renderChat(); }
+                    
+                    const now = Date.now();
+                    const ONE_DAY = 24 * 60 * 60 * 1000;
+                    let cleanChat = newChat.filter(m => (m.timestamp && (now - m.timestamp < ONE_DAY)));
+                    
+                    if (cleanChat.length > chatMessages.length) {
+                        if (!isChatOpen) { unreadChatCount += (cleanChat.length - chatMessages.length); updateChatBadge(); } 
+                        else { chatMessages = cleanChat; renderChat(); }
+                    } else {
+                        chatMessages = cleanChat;
+                        if(isChatOpen) renderChat();
                     }
-                    chatMessages = newChat;
+                    
+                    const teacherModal = document.getElementById('teacherModal');
+                    if(teacherModal.style.display === 'flex') renderTaskList();
+
                 } else {
                     if (students.length === 0) {
                         for(let i=0; i<30; i++) students.push({ name: "", grades: {}, extraScore: 0, username: "", password: "" });
@@ -421,6 +438,37 @@
 
         function saveDataToFirebase() {
             update(ref(db, ROOT_REF), { students: students, assignments: assignments, chat: chatMessages });
+        }
+
+        // --- AUDIO CONTROL ---
+        window.toggleMusic = function() {
+            const bgMusic = document.getElementById('bgMusic');
+            const btn = document.getElementById('musicBtn');
+            if (isMusicPlaying) {
+                bgMusic.pause();
+                btn.classList.remove('playing');
+                btn.innerText = "🎵";
+            } else {
+                bgMusic.volume = 0.3; // 30% volume
+                bgMusic.play().catch(e => alert("Trình duyệt chặn tự phát nhạc. Hãy tương tác với trang web trước!"));
+                btn.classList.add('playing');
+                btn.innerText = "🔊";
+            }
+            isMusicPlaying = !isMusicPlaying;
+        }
+        
+        function playSfx(type) {
+            const audio = document.getElementById(type === 'correct' ? 'sfxCorrect' : 'sfxWrong');
+            if (audio) {
+                audio.currentTime = 0;
+                audio.play().catch(() => {});
+            }
+        }
+
+        // --- RANK MAP ---
+        window.openRankMap = function() {
+            window.closeModal('studentInfoModal');
+            document.getElementById('rankMapModal').style.display = 'flex';
         }
 
         window.toggleEditMode = function() {
@@ -485,7 +533,8 @@
         window.resetAllRankings = function() {
             if(!confirm("CẢNH BÁO: Bạn có chắc muốn đưa điểm xếp hạng của TẤT CẢ học sinh về 0?")) return;
             students.forEach(s => { s.extraScore = 0; });
-            saveDataToFirebase(); alert("Đã reset toàn bộ điểm xếp hạng!");
+            saveDataToFirebase();
+            alert("Đã reset toàn bộ điểm xếp hạng!");
         }
 
         window.saveStudentScore = function() {
@@ -494,8 +543,10 @@
             students[currentStudentIndex].extraScore = val;
             saveDataToFirebase();
             let totalScore = calculateTotal(students[currentStudentIndex]); let rank = getRank(totalScore);
-            document.getElementById('infoRankIcon').innerText = rank.icon; document.getElementById('infoRankTitle').innerText = rank.title;
-            document.getElementById('infoRankTitle').style.color = rank.color; document.getElementById('infoTotalScore').innerText = totalScore;
+            document.getElementById('infoRankIcon').innerText = rank.icon; 
+            document.getElementById('infoRankTitle').innerText = rank.title;
+            document.getElementById('infoRankTitle').style.color = rank.color; 
+            document.getElementById('infoTotalScore').innerText = totalScore;
             alert("Đã cập nhật điểm!");
         }
 
@@ -557,7 +608,13 @@
             onValue(ref(db, 'rooms/' + roomId), (snapshot) => {
                 const data = snapshot.val();
                 if (!data) { 
-                    if (activeRoomId) { window.closeModal('lobbyModal'); window.closeModal('gameInterfaceModal'); activeRoomId = null; } 
+                    if (activeRoomId) { 
+                        if (activeRoomId) { 
+                            window.closeModal('lobbyModal'); 
+                            window.closeModal('gameInterfaceModal'); 
+                            activeRoomId = null; 
+                        } 
+                    } 
                     return; 
                 }
                 showLobbyUI(data);
@@ -609,8 +666,14 @@
             let qData = currentQuestions[currentQIndex];
             let btns = document.getElementsByClassName('answer-btn');
             for(let b of btns) b.onclick = null;
-            if (idx === qData.c) { btns[idx].classList.add('correct'); score += (gameMode === 'multi' ? 1.5 : 1); } 
-            else { btns[idx].classList.add('wrong'); btns[qData.c].classList.add('correct'); }
+            if (idx === qData.c) { 
+                btns[idx].classList.add('correct'); score += (gameMode === 'multi' ? 1.5 : 1); 
+                playSfx('correct');
+            } 
+            else { 
+                btns[idx].classList.add('wrong'); btns[qData.c].classList.add('correct'); 
+                playSfx('wrong');
+            }
             document.getElementById('gameScore').innerText = score;
             setTimeout(() => { currentQIndex++; loadQuestion(); }, 1000);
         }
@@ -655,8 +718,11 @@
             showGameScreen('gameResult');
             document.getElementById('resultMsg').innerHTML = msg; 
             const btns = document.getElementById('gameResult').querySelectorAll('button');
-            if (gameMode === 'single') { btns[0].style.display = 'none'; } 
-            else { btns[0].style.display = 'inline-block'; }
+            if (gameMode === 'single') {
+                btns[0].style.display = 'none';
+            } else {
+                btns[0].style.display = 'inline-block';
+            }
         }
 
         window.backToLobby = function() {
@@ -669,7 +735,10 @@
             }
         }
 
-        window.exitGameSilent = function() { window.closeModal('gameInterfaceModal'); if (gameMode === 'multi') { activeRoomId = null; } }
+        window.exitGameSilent = function() {
+            window.closeModal('gameInterfaceModal');
+            if (gameMode === 'multi') { activeRoomId = null; }
+        }
         window.exitGame = function() { window.exitGameSilent(); }
 
         function saveScoreToStudent(points) {
@@ -718,7 +787,7 @@
         function renderTaskList() { 
             const list = document.getElementById('taskListContainer'); list.innerHTML = ''; 
             assignments.forEach(task => { 
-                let isGraded = students.some(s => s.grades && s.grades[task.id]);
+                let isGraded = students.some(s => s.grades && s.grades[task.id] !== undefined && s.grades[task.id] !== "");
                 let assignedText = task.assigned ? '(Đã giao)' : '';
                 if(task.assigned && isGraded) assignedText += ' <span style="color:blue; font-weight:bold">(Đã chấm)</span>';
                 let assignBtnAttr = task.assigned ? 'disabled style="opacity:0.6; cursor:not-allowed;"' : '';
