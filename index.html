@@ -89,9 +89,11 @@
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px dashed #b2ebf2; padding-bottom: 10px; }
         .close-btn { font-size: 1.5em; cursor: pointer; color: #aaa; }
         
-        .chat-widget-btn { position: fixed; bottom: 20px; left: 30px; width: 60px; height: 60px; background-color: var(--chat-primary); border-radius: 50%; box-shadow: 0 4px 15px rgba(0,0,0,0.2); cursor: pointer; z-index: 100; display: flex; align-items: center; justify-content: center; font-size: 30px; color: white; transition: transform 0.2s; display: none; }
+        /* CHAT Z-INDEX ĐÃ ĐƯỢC CẬP NHẬT ĐỂ LUÔN HIỂN THỊ TRÊN CÁC MODAL (YÊU CẦU 4) */
+        .chat-widget-btn { position: fixed; bottom: 20px; left: 30px; width: 60px; height: 60px; background-color: var(--chat-primary); border-radius: 50%; box-shadow: 0 4px 15px rgba(0,0,0,0.2); cursor: pointer; z-index: 210; display: flex; align-items: center; justify-content: center; font-size: 30px; color: white; transition: transform 0.2s; display: none; }
         .chat-badge { position: absolute; top: -5px; right: -5px; background: red; color: white; border-radius: 50%; width: 24px; height: 24px; font-size: 12px; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 2px solid white; display: none; }
-        .chat-window { position: fixed; bottom: 90px; left: 30px; width: 350px; height: 450px; background: white; border-radius: 15px; box-shadow: 0 5px 25px rgba(0,0,0,0.2); z-index: 101; display: none; flex-direction: column; overflow: hidden; border: 2px solid #eee; }
+        .chat-window { position: fixed; bottom: 90px; left: 30px; width: 350px; height: 450px; background: white; border-radius: 15px; box-shadow: 0 5px 25px rgba(0,0,0,0.2); z-index: 211; display: none; flex-direction: column; overflow: hidden; border: 2px solid #eee; }
+        
         .chat-header { background: var(--chat-primary); color: white; padding: 10px 15px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
         .chat-body { flex: 1; padding: 15px; overflow-y: auto; background: #f9f9f9; display: flex; flex-direction: column; gap: 10px; }
         .chat-footer { padding: 10px; border-top: 1px solid #eee; display: flex; gap: 5px; }
@@ -206,6 +208,7 @@
                 <button class="btn btn-primary" onclick="window.generateAccounts()">🔐 Cấp TK</button>
                 <button class="btn btn-game" onclick="window.toggleEditMode()">🪑 Sắp xếp</button>
                 <button class="btn btn-danger" onclick="window.resetAllRankings()">0️⃣ Reset</button>
+                <button class="btn btn-danger" onclick="window.logout()">Đăng xuất GV</button>
             </div>
             <label style="font-weight:bold; color:#006064;">Nội dung bài tập:</label>
             <textarea id="taskNameInput" placeholder="VD: Toán trang 15..."></textarea>
@@ -214,6 +217,15 @@
             <button class="btn btn-full" id="btnCancelEdit" onclick="window.resetForm()" style="background:#95a5a6; display:none;">Hủy sửa</button>
             <h3 style="color:#00838f; margin-top:20px;">Danh sách</h3>
             <ul class="task-list" id="taskListContainer"></ul>
+        </div>
+    </div>
+
+    <div id="teacherLoginModal" class="modal">
+        <div class="modal-content" style="width: 350px;">
+            <div class="modal-header"><h2>🔐 Giáo Viên</h2><span class="close-btn" onclick="window.closeModal('teacherLoginModal')">&times;</span></div>
+            <p>Nhập mật khẩu quản trị:</p>
+            <input type="password" id="teacherPassInput" placeholder="********" style="width:100%; padding:10px; margin-bottom:10px; font-size: 1.2em;">
+            <button class="btn btn-danger btn-full" onclick="window.performTeacherLogin()">Xác nhận</button>
         </div>
     </div>
 
@@ -389,7 +401,6 @@
         let currentQIndex = 0;
         let score = 0;
         let gameTimerInterval = null;
-        let roomWaitInterval = null;
         let activeRoomId = null;
         let myRoomRole = null;
         
@@ -407,18 +418,27 @@
                     
                     const now = Date.now();
                     const ONE_DAY = 24 * 60 * 60 * 1000;
+                    // Lọc tin nhắn trong 24h
                     let cleanChat = newChat.filter(m => (m.timestamp && (now - m.timestamp < ONE_DAY)));
                     
+                    // --- FIX LỖI CHAT (YÊU CẦU 1) ---
+                    // Kiểm tra số lượng tin nhắn để hiện thông báo
                     if (cleanChat.length > chatMessages.length) {
-                        if (!isChatOpen) { unreadChatCount += (cleanChat.length - chatMessages.length); updateChatBadge(); } 
-                        else { chatMessages = cleanChat; renderChat(); }
-                    } else {
-                        chatMessages = cleanChat;
-                        if(isChatOpen) renderChat();
+                        if (!isChatOpen) { 
+                            unreadChatCount += (cleanChat.length - chatMessages.length); 
+                            updateChatBadge(); 
+                        }
                     }
-                    
+                    // Cập nhật dữ liệu chat local MỌI LÚC
+                    chatMessages = cleanChat;
+                    // Nếu cửa sổ chat đang mở, LUÔN LUÔN render lại để thấy tin nhắn mới
+                    if (isChatOpen) renderChat();
+
                     const teacherModal = document.getElementById('teacherModal');
                     if(teacherModal.style.display === 'flex') renderTaskList();
+
+                    // --- TÍNH NĂNG TỰ ĐỘNG ĐĂNG NHẬP (PERSISTENCE - YÊU CẦU 2 & 3) ---
+                    checkLoginState();
 
                 } else {
                     if (students.length === 0) {
@@ -428,6 +448,31 @@
                 }
                 renderClassroom();
             });
+        }
+        
+        // Hàm kiểm tra trạng thái đăng nhập từ LocalStorage
+        function checkLoginState() {
+            // 1. Check Giáo viên (Yêu cầu 2)
+            if (localStorage.getItem('lop4c_isAdmin') === 'true') {
+                if (!isAdmin) {
+                    isAdmin = true;
+                    updateStatusUI();
+                }
+            }
+
+            // 2. Check Học sinh (Yêu cầu 3)
+            const savedStudentUser = localStorage.getItem('lop4c_currentUser');
+            if (savedStudentUser && !currentUser && students.length > 0) {
+                let found = students.findIndex(s => s.username === savedStudentUser);
+                if (found !== -1) {
+                    currentUser = { index: found, name: students[found].name, username: students[found].username };
+                    updateHeaderUser();
+                    // Nếu đang mở modal info của chính mình thì update lại view
+                    if(document.getElementById('studentInfoModal').style.display === 'flex' && currentStudentIndex === found) {
+                         window.handleStudentClick(found);
+                    }
+                }
+            }
         }
 
         function saveDataToFirebase() {
@@ -464,10 +509,32 @@
             }
         }
 
+        // --- XỬ LÝ ĐĂNG NHẬP GIÁO VIÊN MỚI (YÊU CẦU 2) ---
         window.handleTeacherDeskClick = function() {
             if (isEditMode) return; 
-            if (isAdmin) { window.resetForm(); renderTaskList(); document.getElementById('teacherModal').style.display = 'flex'; }
-            else { let pass = prompt("🔑 Mật khẩu GV:"); if (pass === ADMIN_PASSWORD) { isAdmin = true; updateStatusUI(); alert("🔓 Chào mừng cô giáo!"); } }
+            if (isAdmin) { 
+                window.resetForm(); 
+                renderTaskList(); 
+                document.getElementById('teacherModal').style.display = 'flex'; 
+            } else { 
+                // Mở Modal nhập mật khẩu thay vì prompt
+                document.getElementById('teacherPassInput').value = '';
+                document.getElementById('teacherLoginModal').style.display = 'flex';
+                setTimeout(() => document.getElementById('teacherPassInput').focus(), 100);
+            } 
+        }
+
+        window.performTeacherLogin = function() {
+            let pass = document.getElementById('teacherPassInput').value;
+            if (pass === ADMIN_PASSWORD) { 
+                isAdmin = true; 
+                localStorage.setItem('lop4c_isAdmin', 'true'); // Lưu trạng thái
+                updateStatusUI(); 
+                window.closeModal('teacherLoginModal');
+                alert("🔓 Chào mừng cô giáo!"); 
+            } else {
+                alert("Sai mật khẩu!");
+            }
         }
 
         window.handleStudentClick = function(index) {
@@ -481,7 +548,10 @@
             
             const lockedView = document.getElementById('studentLockedView'); const unlockedView = document.getElementById('studentUnlockedView');
             const adminActions = document.getElementById('adminActions');
-            let hasAccess = isAdmin || (currentUser && currentUser.index === index);
+            
+            // Check access logic updated for persistence
+            let hasAccess = isAdmin || (currentUser && currentUser.username === student.username);
+            
             if (hasAccess) {
                 lockedView.style.display = 'none'; unlockedView.style.display = 'block';
                 renderStudentTasks(student);
@@ -525,15 +595,39 @@
             alert("Đã cập nhật điểm!");
         }
 
+        // --- XỬ LÝ ĐĂNG NHẬP HỌC SINH (YÊU CẦU 3) ---
         window.performLogin = function() {
             let u = document.getElementById('loginUser').value; let p = document.getElementById('loginPass').value;
             let found = students.findIndex(s => s.username === u && s.password === p);
-            if (found !== -1) { currentUser = { index: found, name: students[found].name, username: students[found].username }; alert(`Xin chào ${currentUser.name}!`); window.closeModal('loginModal'); window.handleStudentClick(found); updateHeaderUser(); } else { alert("Sai thông tin!"); }
+            if (found !== -1) { 
+                currentUser = { index: found, name: students[found].name, username: students[found].username }; 
+                localStorage.setItem('lop4c_currentUser', currentUser.username); // Lưu lại
+                alert(`Xin chào ${currentUser.name}!`); 
+                window.closeModal('loginModal'); 
+                window.handleStudentClick(found); 
+                updateHeaderUser(); 
+            } else { alert("Sai thông tin!"); }
         }
 
+        // --- XỬ LÝ ĐĂNG XUẤT (YÊU CẦU 2 & 3) ---
         window.logout = function() {
-            currentUser = null; window.closeModal('studentInfoModal'); alert("Đã đăng xuất."); updateHeaderUser();
-            document.getElementById('chatWidgetBtn').style.display='none'; document.getElementById('chatWindow').style.display='none';
+            if (isAdmin && !currentUser) {
+                // Nếu là giáo viên logout
+                isAdmin = false;
+                localStorage.removeItem('lop4c_isAdmin');
+                alert("Cô giáo đã đăng xuất.");
+                window.closeModal('teacherModal');
+                updateStatusUI();
+            } else {
+                // Nếu là học sinh logout
+                currentUser = null; 
+                localStorage.removeItem('lop4c_currentUser');
+                window.closeModal('studentInfoModal'); 
+                alert("Đã đăng xuất."); 
+                updateHeaderUser();
+            }
+            document.getElementById('chatWidgetBtn').style.display='none'; 
+            document.getElementById('chatWindow').style.display='none';
         }
 
         function showGameScreen(screenId) {
@@ -740,7 +834,32 @@
         window.toggleChatWindow = function() { const win = document.getElementById('chatWindow'); if (win.style.display === 'flex') { win.style.display = 'none'; isChatOpen = false; } else { win.style.display = 'flex'; isChatOpen = true; unreadChatCount = 0; updateChatBadge(); renderChat(); document.getElementById('chatBody').scrollTop = document.getElementById('chatBody').scrollHeight; } }
         function updateChatBadge() { const badge = document.getElementById('chatBadge'); if (unreadChatCount > 0) { badge.style.display = 'flex'; badge.innerText = unreadChatCount > 9 ? '9+' : unreadChatCount; } else { badge.style.display = 'none'; } }
         window.handleChatKey = function(e) { if (e.key === 'Enter') window.sendChat(); }
-        window.sendChat = function() { const input = document.getElementById('chatInput'); const text = input.value.trim(); if(!text) return; let senderName = isAdmin ? "GV: Nguyễn Thị Thúy An" : currentUser.name; let role = isAdmin ? "teacher" : "student"; let msg = { sender: senderName, role: role, text: text, time: new Date().toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'}) }; chatMessages.push(msg); saveDataToFirebase(); input.value = ''; }
+        
+        // --- CHAT UPDATED (YÊU CẦU 1) ---
+        window.sendChat = function() { 
+            const input = document.getElementById('chatInput'); 
+            const text = input.value.trim(); 
+            if(!text) return; 
+            
+            let senderName = isAdmin ? "GV: Nguyễn Thị Thúy An" : currentUser.name; 
+            let role = isAdmin ? "teacher" : "student"; 
+            
+            // Thêm timestamp để lọc tin nhắn cũ
+            let msg = { 
+                sender: senderName, 
+                role: role, 
+                text: text, 
+                time: new Date().toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'}),
+                timestamp: Date.now()
+            }; 
+            
+            // Gửi dữ liệu lên Firebase
+            // Dữ liệu sẽ được onValue sync về và gọi renderChat() nếu cửa sổ chat mở
+            chatMessages.push(msg); // Cập nhật local để có thể hiển thị nhanh (tùy chọn)
+            saveDataToFirebase(); 
+            input.value = ''; 
+        }
+
         function renderChat() {
             const body = document.getElementById('chatBody'); let html = '';
             let myName = isAdmin ? "GV: Nguyễn Thị Thúy An" : (currentUser ? currentUser.name : "");
@@ -811,7 +930,21 @@
         window.deleteTask = function(id) { if(confirm("Xóa bài?")) { assignments=assignments.filter(x=>x.id!=id); students.forEach(s=>{if(s.grades) delete s.grades[id]}); saveDataToFirebase(); renderTaskList(); renderClassroom(); } }
         window.openGrading = function(id) { const t=assignments.find(x=>x.id==id); document.getElementById('gradingTitle').innerText=t.name; const list=document.getElementById('gradingList'); list.innerHTML=''; students.forEach((s,i)=>{ if(s.name) list.innerHTML+=`<tr><td>${s.name}</td><td style="text-align:right"><input type="number" onchange="window.saveGrade(${i},${id},this.value)" value="${(s.grades&&s.grades[id])||''}"></td></tr>`; }); document.getElementById('gradingModal').style.display='flex'; }
         window.saveGrade = function(i,id,v) { if(!students[i].grades) students[i].grades={}; students[i].grades[id]=v; saveDataToFirebase(); renderClassroom(); }
-        function updateStatusUI() { const b = document.getElementById('statusBadge'); if(isAdmin){ b.classList.add('active'); document.getElementById('statusText').innerText="GV (Admin)"; document.getElementById('lockIcon').innerText="🔓"; updateHeaderUser(); } }
+        
+        function updateStatusUI() { 
+            const b = document.getElementById('statusBadge'); 
+            if(isAdmin){ 
+                b.classList.add('active'); 
+                document.getElementById('statusText').innerText="GV (Admin)"; 
+                document.getElementById('lockIcon').innerText="🔓"; 
+                updateHeaderUser(); 
+            } else {
+                b.classList.remove('active');
+                document.getElementById('statusText').innerText="Chế độ xem";
+                document.getElementById('lockIcon').innerText="🔒";
+            }
+        }
+        
         function updateHeaderUser() { const disp = document.getElementById('currentUserDisplay'); if (currentUser || isAdmin) { disp.style.display = 'block'; disp.innerText = isAdmin ? "Hi, Cô Giáo" : `Hi, ${currentUser.name}`; document.getElementById('chatWidgetBtn').style.display = 'flex'; } else { disp.style.display = 'none'; document.getElementById('chatWidgetBtn').style.display = 'none'; } }
         function getRank(score) { if (score >= 600) return { title: "Chủ Tịch", icon: "👑", color: "#d32f2f" }; if (score >= 500) return { title: "Giám Đốc", icon: "🎖️", color: "#7b1fa2" }; if (score >= 400) return { title: "Trưởng Phòng", icon: "👔", color: "#1565c0" }; if (score >= 300) return { title: "Doanh Nhân", icon: "💼", color: "#00838f" }; if (score >= 200) return { title: "Thương Gia", icon: "💰", color: "#f9a825" }; if (score >= 100) return { title: "Tiểu Thương", icon: "⚖️", color: "#ef6c00" }; return { title: "Dân Thường", icon: "👨‍🌾", color: "#5d4037" }; }
         function calculateTotal(student) { let taskScore = 0; if (student.grades) { Object.values(student.grades).forEach(g => { let val = parseFloat(g); if (!isNaN(val)) taskScore += val; }); } return taskScore + (student.extraScore || 0); }
